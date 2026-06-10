@@ -186,24 +186,24 @@
 </template>
 
 <script setup lang="ts">
-import Logo from "./statics/logo.svg?component";
-import Github from "./statics/github.svg?component";
-import Theme from "./statics/theme.svg?component";
-import Lang from "./statics/lang.svg?component";
+import { buildTimestamp, search, translation, useSetting, version } from "@/helper";
+import { categories as _categories, CategoryInterface } from "ctool-config";
+import { computed, onMounted, ref } from "vue";
+import Arc from "./statics/arc.svg?component";
 import Chrome from "./statics/chrome.svg?component";
 import Edge from "./statics/edge.svg?component";
 import Firefox from "./statics/firefox.svg?component";
+import Github from "./statics/github.svg?component";
+import Lang from "./statics/lang.svg?component";
 import Linux from "./statics/linux.svg?component";
+import Logo from "./statics/logo.svg?component";
 import Mac from "./statics/mac.svg?component";
-import Windows from "./statics/windows.svg?component";
-import Utools from "./statics/utools.svg?component";
-import Arc from "./statics/arc.svg?component";
-import Suggest from "./statics/suggest.svg?component";
 import Search from "./statics/search.svg?component";
+import Suggest from "./statics/suggest.svg?component";
+import Theme from "./statics/theme.svg?component";
+import Utools from "./statics/utools.svg?component";
+import Windows from "./statics/windows.svg?component";
 import Tooltip from "./Tooltip.vue";
-import { ref, onMounted, computed } from "vue";
-import { version, buildTimestamp, useSetting, translation, search } from "@/helper";
-import { categories as _categories, CategoryInterface } from "ctool-config";
 
 const pwaInstaller = ref<(() => void) | null>(null);
 const setting = useSetting();

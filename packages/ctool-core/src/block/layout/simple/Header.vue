@@ -1,12 +1,11 @@
 <template>
     <div class="ctool-header">
         <Align>
-            <Github/>
             <span>{{ $t(`tool_${storeOperate.items.tool}`) }}</span>
         </Align>
         <div class="ctool-header-middle" :class="features.length > 1 ? `ctool-header-middle-center` : ''">
             <template v-if="features.length < 1">
-                <Notice center/>
+    
             </template>
             <template v-else>
                 <div
@@ -41,18 +40,16 @@
 </template>
 
 <script setup lang="ts">
+import { FeatureInterface, getTool, toolExists } from "@/config";
+import event from "@/event";
+import { openUrl } from "@/helper/helper";
+import getHistoryInstance from "@/helper/history";
+import platform from "@/helper/platform";
 import useOperate from "@/store/operate";
 import useSetting from "@/store/setting";
-import {openUrl} from "@/helper/helper"
-import {getTool, toolExists, FeatureInterface} from "@/config";
+import { onMounted, onUnmounted } from "vue";
+import History from "../../History.vue";
 import Search from "../../Search.vue";
-import Github from "../../Github.vue";
-import getHistoryInstance from "@/helper/history";
-import {onMounted, onUnmounted} from "vue";
-import event from "@/event";
-import History from "../../History.vue"
-import platform from "@/helper/platform"
-import Notice from "../../Notice.vue"
 import Tools from "../../Tools.vue";
 
 const storeOperate = useOperate()

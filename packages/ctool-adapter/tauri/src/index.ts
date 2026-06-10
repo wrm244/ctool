@@ -6,7 +6,9 @@ declare global {
             shell: {
                 open: (url: string) => void
             },
-            invoke: (command: string, option?: Record<string, any>) => any
+            core: {
+                invoke: (command: string, option?: Record<string, any>) => any
+            }
         }
     }
 }
@@ -24,6 +26,6 @@ export const runtime = new (class implements PlatformRuntime {
 
     // 开发工具操作
     toggleDevTools() {
-        return window['__TAURI__'].invoke('toggle_dev_tools');
+        return window['__TAURI__'].core.invoke('toggle_dev_tools');
     }
 })

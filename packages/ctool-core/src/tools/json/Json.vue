@@ -111,12 +111,12 @@
                     </template>
                 </Align>
                 <Align>
-                    <template v-for="item in toObjectLangLists.sort()">
+                    <template v-for="item in sortedToObjectLangLists">
                         <Button
                             :size="size"
-                            :text="getDisplayName(item)"
-                            :type="item === action.current.option.to_object.lang ? 'primary' : 'general'"
-                            @click="toggleObject(item)"
+                            :text="item.displayName"
+                            :type="item.lang === action.current.option.to_object.lang ? 'primary' : 'general'"
+                            @click="toggleObject(item.lang)"
                         />
                     </template>
                 </Align>
@@ -151,22 +151,21 @@
 </template>
 
 <script lang="ts" setup>
-import { StyleValue, watch } from "vue";
-import Json from "@/helper/json";
-import { useAction, initialize } from "@/store/action";
-import { tabOptions, actionType, TabsType, pathLists } from "./define";
 import { createSerializeInput, createSerializeOutput } from "@/components/serialize";
-import Schema from "./Schema.vue";
-import { serializeInputEncoderLists, serializeOutputEncoderLists } from "@/types";
-import Path from "./Path.vue";
-import Serialize from "@/helper/serialize";
-import { typeLists as renameTypeLists, TypeLists as RenameType } from "@/helper/nameConvert";
-import util from "./util";
 import { getDisplayName } from "@/helper/code";
+import Json from "@/helper/json";
+import { TypeLists as RenameType, typeLists as renameTypeLists } from "@/helper/nameConvert";
+import Serialize from "@/helper/serialize";
+import { initialize, useAction } from "@/store/action";
+import { ComponentSizeType, serializeInputEncoderLists, serializeOutputEncoderLists } from "@/types";
 import { jsonrepair } from "jsonrepair";
-import { ComponentSizeType } from "@/types";
+import { StyleValue, watch } from "vue";
+import { actionType, pathLists, tabOptions, TabsType } from "./define";
+import Path from "./Path.vue";
+import Schema from "./Schema.vue";
+import { getOption as getToObjectOption, languages as toObjectLangLists } from "./toObject";
 import ToObject from "./toObject/ToObject.vue";
-import { languages as toObjectLangLists, getOption as getToObjectOption } from "./toObject";
+import util from "./util";
 
 const action = useAction(
     await initialize<actionType>(
@@ -314,6 +313,12 @@ const inputSerialize: Serialize = $computed(() => {
 });
 
 // 切换
+const sortedToObjectLangLists = $computed(() => {
+    return toObjectLangLists
+        .map(lang => ({ lang, displayName: getDisplayName(lang) }))
+        .sort((a, b) => a.displayName.localeCompare(b.displayName));
+});
+
 const toggleObject = lang => {
     action.current.option.to_object.lang = lang;
     toObjectOpen = true;

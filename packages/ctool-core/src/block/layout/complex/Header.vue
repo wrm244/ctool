@@ -1,7 +1,6 @@
 <template>
     <div class="ctool-header">
         <div class="ctool-header-top">
-            <Github />
             <div class="ctool-header-top-left">
                 <div
                     v-for="name in allCategories"
@@ -51,13 +50,12 @@
 </template>
 
 <script setup lang="ts">
+import { FeatureInterface, categories, categoryExists, getCategory, getTool, toolExists } from "@/config";
 import useOperate from "@/store/operate";
 import useSetting from "@/store/setting";
-import {getTool, toolExists, FeatureInterface, categories, getCategory, categoryExists} from "@/config";
+import { nextTick, watch } from "vue";
 import Search from "../../Search.vue";
 import Tools from "../../Tools.vue";
-import {nextTick, watch} from "vue";
-import Github from "../../Github.vue";
 
 const storeOperate = useOperate()
 const storeSetting = useSetting()
@@ -144,6 +142,8 @@ watch(() => {
 .ctool-header-top-right {
     display: inline-flex;
     align-items: center;
+    justify-content: flex-end;
+    margin-left: auto;
 }
 
 .ctool-header-category {

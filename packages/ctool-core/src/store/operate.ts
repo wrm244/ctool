@@ -2,7 +2,7 @@
 import {defineStore} from '@/helper/pinia'
 import {reactive} from 'vue';
 import {getTool, ToolType, toolExists, categoryExists, tools, getCategory} from "@/config";
-import {useRouter} from "vue-router";
+import {useRouter, useRoute} from "vue-router";
 import event from "@/event";
 
 interface Types {
@@ -34,6 +34,7 @@ export default defineStore(
     () => {
         const items = reactive<Types>(defaultValue)
         const router = useRouter()
+        const route = useRoute()
 
         // 跳转
         const redirectTool = (_tool: string = "", _feature: string = "", _category: string = "", history: string | number = "", keyword: string = "") => {
@@ -47,11 +48,21 @@ export default defineStore(
             if (keyword !== "") {
                 query['keyword'] = keyword
             }
+            const targetPath = feature.getRouter()
+            const targetQuery = feature.getQuery(category.name, query)
+            // 避免冗余导航：如果目标路由与当前路由完全一致则直接返回
+            if (
+                route.path === targetPath &&
+                JSON.stringify(route.query) === JSON.stringify(targetQuery)
+            ) {
+                event.dispatch('extend_page_close')
+                return Promise.resolve()
+            }
             event.dispatch('extend_page_close')
             return router.push(
                 {
-                    path: feature.getRouter(),
-                    query: feature.getQuery(category.name, query)
+                    path: targetPath,
+                    query: targetQuery
                 }
             )
         }

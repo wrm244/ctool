@@ -1,8 +1,8 @@
+import { TypeLists as RenameType, convent as nameConvent } from "@/helper/nameConvert";
 import formatter from "@/tools/code/formatter";
 import unicode from "@/tools/unicode/util";
-import {isPlainObject, isArray} from "lodash";
 import jsonKeysSort from "json-keys-sort";
-import {TypeLists as RenameType, convent as nameConvent} from "@/helper/nameConvert";
+import { isArray, isPlainObject } from "lodash";
 
 const beautify = async (code: string, {tab = 4}: any = {}) => {
     return code !== "" ? await (await formatter.load('json')).set(code, {tab}).format('beautify') : ""
@@ -10,17 +10,16 @@ const beautify = async (code: string, {tab = 4}: any = {}) => {
 const compress = async (code: string) => {
     return code !== "" ? await (await formatter.load('json')).set(code).format('compress') : ""
 }
-const rename = (code: any, type: RenameType) => {
-    if (isPlainObject(code) || isArray(code)) {
-        for (let i in code) {
-            if (isPlainObject(code)) {
-                let temp = code[i]
-                delete code[i]
-                code[nameConvent(i, type)] = rename(temp, type)
-            } else {
-                code[i] = rename(code[i], type)
-            }
+const rename = (code: any, type: RenameType): any => {
+    if (isArray(code)) {
+        return code.map(item => rename(item, type));
+    }
+    if (isPlainObject(code)) {
+        const result: Record<string, any> = {};
+        for (const key in code) {
+            result[nameConvent(key, type)] = rename(code[key], type);
         }
+        return result;
     }
     return code;
 }
@@ -37,15 +36,15 @@ const unicode2zh = (content: string) => {
 
 // zh2unicode
 const zh2unicode = (content: string) => {
-    if (content !== "") {
-        let newStr = ''
-        for (let i = 0; i < content.length; i++) {
-            let str = content.charAt(i)
-            newStr += /[\u4e00-\u9fa5]/.test(str) ? '\\u' + str.charCodeAt(0).toString(16) : str
-        }
-        return newStr
+    if (content === "") {
+        return content;
     }
-    return content
+    let newStr = '';
+    for (const char of content) {
+        const code = char.codePointAt(0)!;
+        newStr += code >= 0x4e00 && code <= 0x9fa5 ? '\\u' + code.toString(16) : char;
+    }
+    return newStr;
 }
 
 export default {

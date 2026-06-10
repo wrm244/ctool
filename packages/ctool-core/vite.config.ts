@@ -1,10 +1,10 @@
+import vue from "@vitejs/plugin-vue";
+import ReactivityTransform from "@vue-macros/reactivity-transform/vite";
+import { readFileSync } from "fs";
 import { join, resolve } from "path";
 import { defineConfig } from "vite";
-import vue from "@vitejs/plugin-vue";
-import { nodePolyfills } from "vite-plugin-node-polyfills";
-import { readFileSync } from "fs";
 import HtmlConfig from "vite-plugin-html-config";
-import ReactivityTransform from "@vue-macros/reactivity-transform/vite";
+import { nodePolyfills } from "vite-plugin-node-polyfills";
 
 export default defineConfig({
     base: "./",
@@ -32,6 +32,7 @@ export default defineConfig({
     },
     build: {
         emptyOutDir: true,
+        sourcemap: false,
         rollupOptions: {
             input: {
                 index: resolve(__dirname, "index.html"),
@@ -40,5 +41,16 @@ export default defineConfig({
         },
         reportCompressedSize: false,
         chunkSizeWarningLimit: 5000,
+        minify: "terser",
+        terserOptions: {
+            compress: {
+                drop_console: true,
+                drop_debugger: true,
+                pure_funcs: ["console.log", "console.info", "console.debug"],
+            },
+            format: {
+                comments: false,
+            },
+        },
     },
 });

@@ -10,7 +10,7 @@ export default () => {
         return _inner;
     }
 
-    const has = (className) => _deps.includes(className)
+    const has = (className) => className in _deps
 
     const all = () => _deps;
 

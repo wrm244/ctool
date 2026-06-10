@@ -157,7 +157,7 @@ class Text {
     }
 
     toDown() {
-        let objectUrl = window.URL.createObjectURL(new Blob([this.uint.uint8Array], { type: this.mime() }));
+        let objectUrl = window.URL.createObjectURL(new Blob([this.uint.uint8Array.buffer as ArrayBuffer], { type: this.mime() }));
         let aEle = document.createElement("a");
         aEle.download = this.name();
         aEle.href = objectUrl;

@@ -1,5 +1,5 @@
-import * as monaco from "monaco-editor";
 import formatter from "@/tools/code/formatter";
+import * as monaco from "monaco-editor";
 
 // 自定义右键菜单
 const lists = [
@@ -113,6 +113,9 @@ class contextMenu {
         this.editor = editor;
         this.initMenu();
         this.editor.onDidChangeModelLanguage(e => {
+            if ((this.editor as any)._isDisposed) {
+                return;
+            }
             this.toggle("ctool_beautify", formatter.isEnable(e.newLanguage, "beautify"));
             this.toggle("ctool_compress", formatter.isEnable(e.newLanguage, "compress"));
             this.removeDefaultMenu();
@@ -120,16 +123,31 @@ class contextMenu {
         this.removeDefaultMenu();
     }
 
+    private isDisposed() {
+        return !!(this.editor as any)._isDisposed;
+    }
+
+    private safeCreateContextKey(key: string, value: boolean) {
+        try {
+            this.editor.createContextKey(key, value);
+        } catch (e) {
+            // 编辑器已销毁，忽略
+        }
+    }
+
     private removeDefaultMenu() {
         setTimeout(() => {
+            if (this.isDisposed()) {
+                return;
+            }
             // 移除多余右键菜单
-            this.editor.createContextKey("editorHasDocumentFormattingProvider", false);
-            // this.editor.createContextKey("editorHasDocumentSymbolProvider", false);
-            this.editor.createContextKey("editorHasReferenceProvider", false);
-            this.editor.createContextKey("editorHasDefinitionProvider", false);
-            this.editor.createContextKey("editorHasDocumentSelectionFormattingProvider", false);
-            this.editor.createContextKey("editorHasMultipleDocumentFormattingProvider", false);
-            this.editor.createContextKey("editorHasMultipleDocumentSelectionFormattingProvider", false);
+            this.safeCreateContextKey("editorHasDocumentFormattingProvider", false);
+            // this.safeCreateContextKey("editorHasDocumentSymbolProvider", false);
+            this.safeCreateContextKey("editorHasReferenceProvider", false);
+            this.safeCreateContextKey("editorHasDefinitionProvider", false);
+            this.safeCreateContextKey("editorHasDocumentSelectionFormattingProvider", false);
+            this.safeCreateContextKey("editorHasMultipleDocumentFormattingProvider", false);
+            this.safeCreateContextKey("editorHasMultipleDocumentSelectionFormattingProvider", false);
         }, 200);
     }
 
@@ -161,7 +179,10 @@ class contextMenu {
     }
 
     toggle(id: contextMenuType, status: boolean) {
-        return this.editor.createContextKey(id, status);
+        if (this.isDisposed()) {
+            return;
+        }
+        return this.safeCreateContextKey(id, status);
     }
 }
 
