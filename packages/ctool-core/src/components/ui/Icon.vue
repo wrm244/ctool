@@ -1,9 +1,7 @@
 <template>
     <Tooltip :content="tooltip">
         <i :class="classes" :style="{...(size ? {'--font-size':isNumber(size) ? `${size}px` : `${size}`} : {})}" v-bind="$attrs">
-            <template v-if="IconComponent !== null">
-                <IconComponent @click="click" :style="style"/>
-            </template>
+            <IconComponent v-if="IconComponent !== null" @click="click" :style="style"/>
         </i>
     </Tooltip>
 </template>
@@ -55,8 +53,8 @@ const props = defineProps({
 
 let IconComponent: any = $ref(null)
 
-watch(() => props.name, async (name) => {
-    IconComponent = await load(name)
+watch(() => props.name, (name) => {
+    IconComponent = load(name)
 }, {immediate: true})
 
 const style = computed(() => {

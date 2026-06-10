@@ -6,32 +6,32 @@
 use dirs;
 use reqwest::blocking::Client;
 use std::path::PathBuf;
+use std::sync::OnceLock;
 use std::time::Duration;
 
+static HTTP_CLIENT: OnceLock<Client> = OnceLock::new();
+
+fn http_client() -> &'static Client {
+    HTTP_CLIENT.get_or_init(|| {
+        Client::builder()
+            .timeout(Duration::from_secs(3))
+            .build()
+            .expect("Failed to build HTTP client")
+    })
+}
+
 fn check_file_exists_in_home_dir(file_path: &str) -> bool {
-    let home_dir = match dirs::home_dir() {
-        Some(path) => path,
-        None => return false,
-    };
-
-    let file_path = PathBuf::from(&home_dir).join(file_path);
-
-    if let Err(_) = file_path.metadata() {
-        return false;
-    }
-
-    file_path.exists()
+    dirs::home_dir()
+        .map(|home| home.join(file_path).exists())
+        .unwrap_or(false)
 }
 
 fn is_url_accessible(url: &str) -> bool {
-    let client = Client::builder()
-        .timeout(Duration::from_secs(3))
-        .build()
-        .unwrap();
-    match client.head(url).send() {
-        Ok(resp) => resp.status().is_success(),
-        Err(_) => false,
-    }
+    http_client()
+        .head(url)
+        .send()
+        .map(|resp| resp.status().is_success())
+        .unwrap_or(false)
 }
 
 #[tauri::command]

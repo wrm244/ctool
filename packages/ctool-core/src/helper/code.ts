@@ -1,70 +1,106 @@
-import * as monaco from "monaco-editor";
-const supportedLanguages = monaco.languages.getLanguages();
+import type { languages } from "monaco-editor/esm/vs/editor/editor.api";
 
-// 获取编辑器编辑语言对象
-const getSourceLanguage = (land: string) => {
-    for (let language of supportedLanguages) {
-        if ([language.id, ...(language.aliases || [])].map(name => name.toLowerCase()).includes(land.toLowerCase())) {
-            return language;
+let languageMap: Map<string, languages.ILanguageExtensionPoint> | null = null;
+let customLanguages: { name: string; alias: string[]; language: languages.ILanguageExtensionPoint | null }[] | null = null;
+
+type CustomLanguage = { name: string; alias: string[]; language: languages.ILanguageExtensionPoint | null };
+let loadPromise: Promise<void> | null = null;
+
+const buildLanguageMap = (list: languages.ILanguageExtensionPoint[]) => {
+    const map = new Map<string, languages.ILanguageExtensionPoint>();
+    for (const lang of list) {
+        map.set(lang.id.toLowerCase(), lang);
+        for (const alias of lang.aliases || []) {
+            map.set(alias.toLowerCase(), lang);
         }
     }
-    return null;
+    return map;
+};
+
+const initCustomLanguages = () => {
+    const map = languageMap!;
+    const get = (land: string): languages.ILanguageExtensionPoint | null => map.get(land.toLowerCase()) ?? null;
+
+    customLanguages = [
+        defineConfig("GraphQL"),
+        defineConfig("Vue", get("html")),
+        defineConfig("Angular", get("html")),
+        defineConfig("HTML Table", get("html"), ["html_table"]),
+        defineConfig("PHP Array", get("php"), ["php_array"]),
+        defineConfig("Php Serialize", get("php"), ["php_serialize"]),
+        defineConfig("Http Query String", null, ["http_query_string"]),
+        defineConfig("JSON Schema", get("json")),
+        defineConfig("JavaScript PropTypes", get("typescript")),
+        defineConfig("Flow", get("typescript")),
+        defineConfig("Text"),
+        defineConfig("CSV"),
+        defineConfig("C-99", get("c"), ["c99"]),
+        defineConfig("C++ 14", get("c++"), ["cpp14"]),
+        defineConfig("C++ 17", get("c++"), ["cpp17"]),
+        defineConfig("Python 2", get("python"), ["python2"]),
+        defineConfig("Python 3", get("python"), ["python3"]),
+        defineConfig("VB.NET", get("vb.net"), ["vbn"]),
+        defineConfig("JavaScript", get("javascript"), ["nodejs"]),
+    ];
+};
+
+export const loadLanguages = async () => {
+    if (languageMap !== null) {
+        return;
+    }
+    if (loadPromise !== null) {
+        return loadPromise;
+    }
+    loadPromise = (async () => {
+        const monaco = await import("monaco-editor/esm/vs/editor/editor.api");
+        const list = monaco.languages.getLanguages();
+        languageMap = buildLanguageMap(list);
+        initCustomLanguages();
+    })();
+    return loadPromise;
 };
 
 // 定义自定义语言
-const defineConfig = (name: string, language?: monaco.languages.ILanguageExtensionPoint | null, alias?: string[]) => {
+const defineConfig = (name: string, language?: languages.ILanguageExtensionPoint | null, alias?: string[]): CustomLanguage => {
     return {
         name,
         alias: alias || [],
-        language: language,
+        language: language ?? null,
     };
 };
 
-// 自定义语言配置
-const customLanguages = [
-    defineConfig("GraphQL"),
-    defineConfig("Vue", getSourceLanguage("html")),
-    defineConfig("Angular", getSourceLanguage("html")),
-    defineConfig("HTML Table", getSourceLanguage("html"), ["html_table"]),
-    defineConfig("PHP Array", getSourceLanguage("php"), ["php_array"]),
-    defineConfig("Php Serialize", getSourceLanguage("php"), ["php_serialize"]),
-    defineConfig("Http Query String", null, ["http_query_string"]),
-    defineConfig("JSON Schema", getSourceLanguage("json")),
-    defineConfig("JavaScript PropTypes", getSourceLanguage("TypeScript")),
-    defineConfig("Flow", getSourceLanguage("TypeScript")),
-    defineConfig("Text"),
-    defineConfig("CSV"),
-    defineConfig("C-99", getSourceLanguage("c"), ["c99"]),
-    defineConfig("C++ 14", getSourceLanguage("c++"), ["cpp14"]),
-    defineConfig("C++ 17", getSourceLanguage("c++"), ["cpp17"]),
-    defineConfig("Python 2", getSourceLanguage("python"), ["python2"]),
-    defineConfig("Python 3", getSourceLanguage("python"), ["python3"]),
-    defineConfig("VB.NET", getSourceLanguage("VB.NET"), ["vbn"]),
-    defineConfig("JavaScript", getSourceLanguage("JavaScript"), ["nodejs"]),
-];
+// 获取编辑器编辑语言对象
+const getSourceLanguage = (land: string): languages.ILanguageExtensionPoint | null => {
+    if (languageMap === null) {
+        return null;
+    }
+    return languageMap.get(land.toLowerCase()) || null;
+};
 
 // 获取 编辑器 语言处理对象
-export const getEditorLanguage = (land: string) => {
+export const getEditorLanguage = (land: string): languages.ILanguageExtensionPoint => {
     const language = getSourceLanguage(land);
     if (language) {
         return language;
     }
 
-    // 自定义
-    for (let item of customLanguages) {
-        if ([item.name, ...item.alias].map(name => name.toLowerCase()).includes(land.toLowerCase()) && item.language) {
-            return item.language;
+    if (customLanguages !== null) {
+        for (let item of customLanguages) {
+            if ([item.name, ...item.alias].map(name => name.toLowerCase()).includes(land.toLowerCase()) && item.language) {
+                return item.language;
+            }
         }
     }
-    return <monaco.languages.ILanguageExtensionPoint>getSourceLanguage("plaintext");
+    return getSourceLanguage("plaintext") || { id: "plaintext" };
 };
 
 // 获取程序语言显示名称
-export const getDisplayName = (land: string) => {
-    // 自定义
-    for (let language of customLanguages) {
-        if ([language.name, ...language.alias].map(name => name.toLowerCase()).includes(land.toLowerCase())) {
-            return language.name;
+export const getDisplayName = (land: string): string => {
+    if (customLanguages !== null) {
+        for (let language of customLanguages) {
+            if ([language.name, ...language.alias].map(name => name.toLowerCase()).includes(land.toLowerCase())) {
+                return language.name;
+            }
         }
     }
 
@@ -76,9 +112,22 @@ export const getDisplayName = (land: string) => {
     return land;
 };
 
-export const allLanguage = (() => {
-    return [
-        ...supportedLanguages.map(item => (item.aliases ? item.aliases[0] : item.id)),
-        ...customLanguages.map(item => item.name),
-    ].sort();
-})();
+export const getAllLanguage = (): string[] => {
+    const lists: string[] = [];
+    if (languageMap !== null) {
+        const seen = new Set<string>();
+        for (const lang of languageMap.values()) {
+            const name = lang.aliases ? lang.aliases[0] : lang.id;
+            if (!seen.has(name)) {
+                seen.add(name);
+                lists.push(name);
+            }
+        }
+    }
+    if (customLanguages !== null) {
+        for (const item of customLanguages) {
+            lists.push(item.name);
+        }
+    }
+    return lists.sort();
+};

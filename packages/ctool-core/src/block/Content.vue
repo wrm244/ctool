@@ -31,7 +31,7 @@ const operate = useOperate()
 const router = useRouter()
 let pwaUpdate = $ref(false)
 let pwaUpdater = $ref<(() => void) | null>(null)
-let is = $ref(false)
+let is = $ref(true)
 
 onMounted(() => {
     window.dispatchEvent(new Event('resize'));
@@ -50,23 +50,17 @@ event.addListener('open_setting', () => {
 })
 
 router.beforeResolve((to) => {
-    is = false
     const meta = to.meta as RouteMeta
     if (meta.type === "tool") {
         const queryCategory = to.query.category?.toString() || ""
         const category = categoryExists(queryCategory) ? queryCategory : getTool(meta.tool).firstCategory().name
         if (!operate.access(meta.tool, meta.feature, category)) {
-            is = true
             return false
         }
         report({_t: meta.type, _c: category, _n: meta.tool, _f: meta.feature, _p: to.name || ""})
     } else {
         report({_t: meta.type, _p: to.name || ""})
     }
-})
-
-router.afterEach(() => {
-    is = true
 })
 
 </script>

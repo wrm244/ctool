@@ -13,8 +13,10 @@
 <script lang="ts" setup>
 import { watch } from "vue";
 import { initialize, useAction } from "@/store/action";
-import { allLanguage } from "@/helper/code";
+import { getAllLanguage } from "@/helper/code";
 import Diff from "@/components/editor/Diff.vue";
+
+const allLanguage = getAllLanguage();
 
 type DataType = {
     original: string;

@@ -72,7 +72,7 @@ const resize = debounce(function () {
     large = current - small;
     emit("resize", current);
     event.dispatch("component_resize");
-}, 300);
+}, 50);
 
 const windowResize = async () => {
     await nextTick();

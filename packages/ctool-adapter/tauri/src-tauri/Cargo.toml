@@ -1,8 +1,8 @@
 [package]
 name = "tauri-app"
-version = "0.0.0"
-description = "A Tauri App"
-authors = ["you"]
+version = "2.5.0"
+description = "ctool"
+authors = ["wrm244"]
 license = ""
 repository = ""
 edition = "2021"
@@ -14,8 +14,8 @@ rust-version = "1.57"
 tauri-build = { version = "2", features = ["config-json5"] }
 
 [dependencies]
-serde_json = "1.0"
-serde = { version = "1.0", features = ["derive"] }
+serde_json = "1"
+serde = { version = "1", features = ["derive"] }
 tauri = { version = "2", features = [ "config-json5", "devtools"] }
 reqwest = { version = "0.11", features = ["blocking"] }
 dirs = "5.0"

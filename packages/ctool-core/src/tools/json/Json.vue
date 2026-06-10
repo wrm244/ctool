@@ -154,6 +154,7 @@
 import { createSerializeInput, createSerializeOutput } from "@/components/serialize";
 import { getDisplayName } from "@/helper/code";
 import Json from "@/helper/json";
+import Message from "@/helper/message";
 import { TypeLists as RenameType, typeLists as renameTypeLists } from "@/helper/nameConvert";
 import Serialize from "@/helper/serialize";
 import { initialize, useAction } from "@/store/action";
@@ -279,7 +280,11 @@ const general = {
     repair() {
         const code = this.getInput();
         if (code !== "") {
-            this.beautify(jsonrepair(code));
+            try {
+                this.beautify(jsonrepair(code));
+            } catch (e: any) {
+                Message.error($error(e));
+            }
         }
     },
 };

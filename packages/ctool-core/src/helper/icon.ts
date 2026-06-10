@@ -27,7 +27,7 @@ export const all = Object.keys(iconData) as iconType[]
 
 export type IconType = iconType
 
-export const load = async (name: iconType) => {
+export const load = (name: iconType) => {
     if (!(name in lists)) {
         if (!(name in iconData)) {
             throw new Error(`icon [${name}] not found`)

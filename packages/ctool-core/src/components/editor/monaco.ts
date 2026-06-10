@@ -1,13 +1,13 @@
 import loader from "@monaco-editor/loader";
-import ContextMenu from "./contextMenu";
-import lineInfo from "./lineInfo";
-import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
 import * as monaco from "monaco-editor";
+import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
 import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
-import jsonWorker from "monaco-editor/esm/vs/language/json/json.worker?worker";
 import cssWorker from "monaco-editor/esm/vs/language/css/css.worker?worker";
 import htmlWorker from "monaco-editor/esm/vs/language/html/html.worker?worker";
+import jsonWorker from "monaco-editor/esm/vs/language/json/json.worker?worker";
 import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
+import ContextMenu from "./contextMenu";
+import lineInfo from "./lineInfo";
 import "./style.css";
 
 self.MonacoEnvironment = {
@@ -42,4 +42,5 @@ const monacoInit = (params: Parameters<typeof loader.config>[0] = {}) => {
     return loader.init();
 };
 
-export { monacoInit, ContextMenu, monacoInstance, monacoEditor, lineInfo };
+export { ContextMenu, lineInfo, monacoEditor, monacoInit, monacoInstance };
+

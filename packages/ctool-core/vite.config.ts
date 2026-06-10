@@ -38,6 +38,19 @@ export default defineConfig({
                 index: resolve(__dirname, "index.html"),
                 tool: resolve(__dirname, "tool.html"),
             },
+            output: {
+                manualChunks(id) {
+                    if (id.includes("monaco-editor")) {
+                        return "monaco-editor";
+                    }
+                    if (id.includes("node_modules")) {
+                        if (id.includes("vue") || id.includes("vue-router") || id.includes("pinia")) {
+                            return "vue-vendor";
+                        }
+                        return "vendor";
+                    }
+                },
+            },
         },
         reportCompressedSize: false,
         chunkSizeWarningLimit: 5000,
@@ -47,6 +60,10 @@ export default defineConfig({
                 drop_console: true,
                 drop_debugger: true,
                 pure_funcs: ["console.log", "console.info", "console.debug"],
+            },
+            mangle: {
+                keep_classnames: true,
+                keep_fnames: true,
             },
             format: {
                 comments: false,
