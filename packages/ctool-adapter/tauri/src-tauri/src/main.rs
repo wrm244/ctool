@@ -5,7 +5,6 @@
 
 use dirs;
 use reqwest::blocking::Client;
-use std::path::PathBuf;
 use std::sync::OnceLock;
 use std::time::Duration;
 

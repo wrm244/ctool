@@ -36,15 +36,19 @@
     "app": {
         "withGlobalTauri": true,
         "security": {
-            "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
+            "csp": "default-src 'self'; connect-src 'self' ipc://localhost https:; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:",
+            "capabilities": ["desktop-capability"]
         },
         "windows": [
             {
                 "fullscreen": false,
                 "height": 650,
+                "minHeight": 300,
+                "minWidth": 500,
                 "resizable": true,
                 "title": "Ctool 程序开发常用工具",
-                "width": 900
+                "width": 900,
+                "useHttpsScheme": true
             }
         ]
     },
