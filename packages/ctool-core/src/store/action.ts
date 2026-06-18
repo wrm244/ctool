@@ -1,18 +1,17 @@
 // 工具操作
-import { reactive, toRaw } from "vue";
-import dayjs from "dayjs";
-import { instanceOfInput, instanceOfHistorySerializable } from "@/helper/util";
-import { paste, copy as copyText, copyImage } from "@/helper/clipboard";
-import useOperate from "@/store/operate";
+import { copyImage, copy as copyText, paste } from "@/helper/clipboard";
 import getHistoryInstance from "@/helper/history";
-import useSetting from "@/store/setting";
-import { useRoute } from "vue-router";
-import { debounce, cloneDeep, isNumber, toNumber, isObject, isString, merge } from "lodash";
-import { MessageType } from "@/types";
-import { objectInObject } from "@/helper/util";
 import Message from "@/helper/message";
-import storage from "@/helper/storage";
 import { safeMergeWith } from "@/helper/safeMerge";
+import storage from "@/helper/storage";
+import { instanceOfHistorySerializable, instanceOfInput, objectInObject } from "@/helper/util";
+import useOperate from "@/store/operate";
+import useSetting from "@/store/setting";
+import { MessageType } from "@/types";
+import dayjs from "dayjs";
+import { cloneDeep, debounce, isNumber, isObject, isString, merge, toNumber } from "lodash";
+import { reactive, toRaw } from "vue";
+import { useRoute } from "vue-router";
 
 type Success = {
     message?: string,
@@ -263,7 +262,7 @@ export const useAction = <T extends Record<string, any>>(input: InitializeReturn
         }
         // 提示
         if (message !== "") {
-            Message[message_type](message, { offset: 150 });
+            Message[message_type](message, { offset: 10 });
         }
     };
 
