@@ -1,4 +1,5 @@
 import { join, resolve } from "path";
+import { fileURLToPath } from "url";
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import { VitePWA } from "vite-plugin-pwa";
@@ -6,6 +7,8 @@ import svgLoader from "vite-svg-loader";
 import ctoolPlugin from "./vitePlugin";
 import { readFileSync } from "fs";
 import HtmlConfig from "vite-plugin-html-config";
+
+const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
 export default defineConfig({
     base: "./",
@@ -38,7 +41,7 @@ export default defineConfig({
                 ],
                 globPatterns: ["**\/*.{js,css,html,png,jpg,ico,svg,json}"],
                 cleanupOutdatedCaches: true,
-                maximumFileSizeToCacheInBytes: 10485760,
+                maximumFileSizeToCacheInBytes: 15728640,
             },
         }),
     ],
@@ -50,7 +53,7 @@ export default defineConfig({
     build: {
         assetsDir: "_assets",
         emptyOutDir: true,
-        rollupOptions: {
+        rolldownOptions: {
             input: {
                 index: resolve(__dirname, "index.html"),
             },

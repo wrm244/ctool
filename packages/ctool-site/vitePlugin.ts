@@ -1,7 +1,10 @@
 import {Plugin, ResolvedConfig} from "vite";
 import {join} from "path";
+import {fileURLToPath} from "url";
 import {cpSync, readFileSync, writeFileSync} from "fs";
 import {tools} from 'ctool-config'
+
+const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
 const {i18n} = JSON.parse(readFileSync(join(__dirname, '../ctool-core/public/ctool.addition.json')).toString())
 export const translation = (key: string) => {
