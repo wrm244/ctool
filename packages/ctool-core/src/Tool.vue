@@ -29,8 +29,7 @@ import { loadLanguages } from "@/helper/code";
 import platform from "@/helper/platform";
 import storage from "@/helper/storage";
 import useSetting, { useTheme } from "@/store/setting";
-import { isObject } from "lodash";
-import { nextTick, onErrorCaptured, onMounted, watch } from "vue";
+import { nextTick, onErrorCaptured, onMounted, onUnmounted, watch } from "vue";
 import { useRouter } from "vue-router";
 
 // 初始化配置
@@ -54,10 +53,11 @@ watch(
     },
 );
 
-// 全局错误提示
+// 全局错误提示：安全提取错误信息，避免 null/undefined 导致崩溃
 const globalErrorMessage = (err: any) => {
     console.log("error:", err);
-    const message: string = (isObject(err) && "message" in err ? err.message : err).toString();
+    // 优先使用 Error 实例的 message，其他情况安全转换为字符串
+    const message: string = err instanceof Error ? err.message : String(err ?? '');
     Message.closeAll();
     if (message.includes("\n")) {
         Message.error(`${message}`, { duration: 0 });
@@ -67,24 +67,34 @@ const globalErrorMessage = (err: any) => {
 };
 
 // Uncaught Promise Error
-window.addEventListener("unhandledrejection", function(event) {
+const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
     event.preventDefault();
     globalErrorMessage(event.reason);
-});
+};
 
 // Uncaught Error
-window.addEventListener("error", event => {
+const handleError = (event: ErrorEvent) => {
     event.preventDefault();
     globalErrorMessage(event.error);
-});
+};
+
+window.addEventListener("unhandledrejection", handleUnhandledRejection);
+window.addEventListener("error", handleError);
 
 onErrorCaptured(err => {
     globalErrorMessage(err);
-    return false;
+    // 开发环境保留错误冒泡，便于调试；生产环境阻止继续传播
+    return import.meta.env.DEV;
 });
 
 onMounted(() => {
     platform.runtime.initialize(storage, router);
+});
+
+onUnmounted(() => {
+    // 组件卸载时移除全局事件监听，防止内存泄漏和重复处理
+    window.removeEventListener("unhandledrejection", handleUnhandledRejection);
+    window.removeEventListener("error", handleError);
 });
 </script>
 <style>

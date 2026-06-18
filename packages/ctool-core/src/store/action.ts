@@ -7,11 +7,12 @@ import useOperate from "@/store/operate";
 import getHistoryInstance from "@/helper/history";
 import useSetting from "@/store/setting";
 import { useRoute } from "vue-router";
-import { debounce, cloneDeep, isNumber, toNumber, mergeWith, isObject, isString, merge } from "lodash";
+import { debounce, cloneDeep, isNumber, toNumber, isObject, isString, merge } from "lodash";
 import { MessageType } from "@/types";
 import { objectInObject } from "@/helper/util";
 import Message from "@/helper/message";
 import storage from "@/helper/storage";
+import { safeMergeWith } from "@/helper/safeMerge";
 
 type Success = {
     message?: string,
@@ -122,10 +123,11 @@ export const initialize = async <T extends Record<string, any>>(
     }
 
     // 强制历史数据
-    const historyIndexItem = getUrlInput("history") !== "" ? history.get(parseInt(getUrlInput("history"))) : null;
+    const historyIndexStr = getUrlInput("history");
+    const historyIndexItem = historyIndexStr !== "" ? history.get(parseInt(historyIndexStr, 10)) : null;
     if (historyIndexItem) {
         return result(
-            mergeWith(items, historyIndexItem, (objValue, srcValue) => {
+            safeMergeWith(items, historyIndexItem, (objValue, srcValue) => {
                 if (instanceOfHistorySerializable(objValue)) {
                     return objValue.unserialize(srcValue);
                 }
@@ -133,46 +135,48 @@ export const initialize = async <T extends Record<string, any>>(
         );
     }
 
-    // 最新历史数据
+    // 最新历史数据：使用 findIndex 避免 all() 深拷贝整个数组
     const latestHistory = (() => {
         if (history.length() < 1) {
             return null;
         }
 
         if (keywordItems) {
-            const all = history.all();
-            for (let itemIndex in all) {
-                if (objectInObject(keywordItems, all[itemIndex].v)) {
-                    // 最新历史数据 根据索关键字过滤
-                    return history.getWithTime(parseInt(itemIndex));
-                }
-            }
-            return null;
+            const index = history.findIndex((item) => objectInObject(keywordItems, item.v));
+            return index >= 0 ? history.getWithTime(index) : null;
         }
         return history.getWithTime(0);
     })();
 
-    // 剪贴板数据
+    // 剪贴板数据：读取失败时不阻塞初始化流程
     const pasteInput = await (async () => {
         if (inputField && pasteCheck !== false && storeSetting.items.auto_read_copy) {
-            const pasteInput = await paste();
-            if (pasteInput.trim() && pasteCheck(pasteInput)) {
-                return storeSetting.items.auto_read_copy_filter ? pasteInput.trim() : pasteInput;
+            try {
+                const pasteInput = await paste();
+                if (pasteInput.trim() && pasteCheck(pasteInput)) {
+                    return storeSetting.items.auto_read_copy_filter ? pasteInput.trim() : pasteInput;
+                }
+            } catch (e) {
+                console.warn('读取剪贴板失败:', e);
             }
         }
         return "";
     })();
 
+    // 缓存当前时间戳，用于后续历史数据时间比较
+    const currentTimestamp = dayjs().unix();
+
     if (
         latestHistory
         && (
             pasteInput === "" // 剪贴板为空
-            || dayjs().unix() - dayjs(latestHistory.t).unix() < storeSetting.items.fill_history_expire // 配置优先访问内
+            // 配置优先访问历史数据：只解析一次历史时间
+            || currentTimestamp - dayjs(latestHistory.t).unix() < storeSetting.items.fill_history_expire
         )
     ) {
         console.log(`use latest history data`);
         return result(
-            mergeWith(items, latestHistory.v, (objValue, srcValue) => {
+            safeMergeWith(items, latestHistory.v, (objValue, srcValue) => {
                 if (instanceOfHistorySerializable(objValue)) {
                     return objValue.unserialize(srcValue);
                 }
@@ -247,13 +251,13 @@ export const useAction = <T extends Record<string, any>>(input: InitializeReturn
         is_save && save();
         // 复制文本
         if (copy_text !== "" && storeSetting.items.auto_save_copy) {
-            return copyText(copy_text, () => {
+            copyText(copy_text, () => {
                 Message.success($t("main_ui_copy_text_ok"));
             });
         }
-        // 复制图片
+        // 复制图片：与文本复制独立，避免同时传入时图片被忽略
         if (copy_image !== "" && storeSetting.items.auto_save_copy) {
-            return copyImage(copy_image, () => {
+            copyImage(copy_image, () => {
                 Message.success($t("main_ui_copy_image_ok"));
             });
         }
@@ -264,8 +268,11 @@ export const useAction = <T extends Record<string, any>>(input: InitializeReturn
     };
 
     return {
-        current:current as T,
+        current: current as T,
         save,
         success,
+        // 暴露 debounce 清理方法，组件卸载时调用防止内存泄漏
+        cancelSave: () => historyPush.cancel(),
+        flushSave: () => historyPush.flush(),
     };
 };

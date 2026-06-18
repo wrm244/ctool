@@ -5,6 +5,8 @@ let customLanguages: { name: string; alias: string[]; language: languages.ILangu
 
 type CustomLanguage = { name: string; alias: string[]; language: languages.ILanguageExtensionPoint | null };
 let loadPromise: Promise<void> | null = null;
+// 自定义语言别名 -> 语言对象的反向索引，实现 O(1) 查找
+let customLanguageAliasMap: Map<string, CustomLanguage> | null = null;
 
 const buildLanguageMap = (list: languages.ILanguageExtensionPoint[]) => {
     const map = new Map<string, languages.ILanguageExtensionPoint>();
@@ -12,6 +14,17 @@ const buildLanguageMap = (list: languages.ILanguageExtensionPoint[]) => {
         map.set(lang.id.toLowerCase(), lang);
         for (const alias of lang.aliases || []) {
             map.set(alias.toLowerCase(), lang);
+        }
+    }
+    return map;
+};
+
+const buildCustomLanguageAliasMap = (list: CustomLanguage[]) => {
+    const map = new Map<string, CustomLanguage>();
+    for (const item of list) {
+        map.set(item.name.toLowerCase(), item);
+        for (const alias of item.alias) {
+            map.set(alias.toLowerCase(), item);
         }
     }
     return map;
@@ -42,6 +55,7 @@ const initCustomLanguages = () => {
         defineConfig("VB.NET", get("vb.net"), ["vbn"]),
         defineConfig("JavaScript", get("javascript"), ["nodejs"]),
     ];
+    customLanguageAliasMap = buildCustomLanguageAliasMap(customLanguages);
 };
 
 export const loadLanguages = async () => {
@@ -84,11 +98,10 @@ export const getEditorLanguage = (land: string): languages.ILanguageExtensionPoi
         return language;
     }
 
-    if (customLanguages !== null) {
-        for (let item of customLanguages) {
-            if ([item.name, ...item.alias].map(name => name.toLowerCase()).includes(land.toLowerCase()) && item.language) {
-                return item.language;
-            }
+    if (customLanguageAliasMap !== null) {
+        const custom = customLanguageAliasMap.get(land.toLowerCase());
+        if (custom?.language) {
+            return custom.language;
         }
     }
     return getSourceLanguage("plaintext") || { id: "plaintext" };
@@ -96,11 +109,10 @@ export const getEditorLanguage = (land: string): languages.ILanguageExtensionPoi
 
 // 获取程序语言显示名称
 export const getDisplayName = (land: string): string => {
-    if (customLanguages !== null) {
-        for (let language of customLanguages) {
-            if ([language.name, ...language.alias].map(name => name.toLowerCase()).includes(land.toLowerCase())) {
-                return language.name;
-            }
+    if (customLanguageAliasMap !== null) {
+        const custom = customLanguageAliasMap.get(land.toLowerCase());
+        if (custom) {
+            return custom.name;
         }
     }
 

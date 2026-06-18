@@ -14,10 +14,12 @@ class PiniaStorage implements Pick<Storage, 'getItem' | 'setItem'> {
         if (isVersion) {
             _key = _key.replace(VERSION_FLAG, "")
         }
-        let [key, expiry] = _key.split(EXPIRY_SEPARATOR)
+        let [key, expiryStr] = _key.split(EXPIRY_SEPARATOR)
+        const expiry = parseInt(expiryStr, 10)
         return {
             k: key,
-            e: parseInt(expiry),
+            // 解析失败时默认不过期，避免非法 key 导致 NaN 扩散
+            e: isNaN(expiry) ? 0 : expiry,
             v: isVersion
         }
     }
@@ -57,7 +59,7 @@ const persist = (_option: PersistOptions | PersistOptions[] = []) => {
             paths: config.paths
         }
     })
-    return option.length == 1 ? option[0] : option
+    return option.length === 1 ? option[0] : option
 }
 
 // pinia

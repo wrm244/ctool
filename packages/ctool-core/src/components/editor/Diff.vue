@@ -135,9 +135,7 @@ const create = async (element: HTMLElement) => {
                 verticalScrollbarSize: 5,
             },
         });
-        
-        window["_diffEditor"] = diffEditor;
-        
+
         diffEditor.setModel({
             original: originalModel,
             modified: modifiedModel,
@@ -191,7 +189,14 @@ onMounted(async () => {
     await create(<HTMLElement>container.value);
 });
 
-onUnmounted(() => editorView.value?.dispose());
+onUnmounted(() => {
+    editorView.value?.dispose();
+    // 清理未完成的回写定时器，防止内存泄漏
+    if (pendingDiffTimer) {
+        clearInterval(pendingDiffTimer);
+        pendingDiffTimer = null;
+    }
+});
 
 const updateEditor = (original = "", modified = "") => {
     if (!editorView.value) {
@@ -206,6 +211,8 @@ const updateEditor = (original = "", modified = "") => {
 };
 
 // 回写内容
+let pendingDiffTimer: ReturnType<typeof setInterval> | null = null;
+
 watch(
     () => {
         return {
@@ -214,16 +221,22 @@ watch(
         };
     },
     value => {
+        // 清理旧定时器，避免多次 watch 触发时累积
+        if (pendingDiffTimer) {
+            clearInterval(pendingDiffTimer);
+            pendingDiffTimer = null;
+        }
         if (editorView.value) {
             return updateEditor(value.original, value.modified);
         }
-        
+
         // 防止初始内容变更 编辑器还没有初始化成功
-        const timer = setInterval(() => {
+        pendingDiffTimer = setInterval(() => {
             if (editorView.value) {
-                clearInterval(timer);
+                updateEditor(value.original, value.modified);
+                clearInterval(pendingDiffTimer!);
+                pendingDiffTimer = null;
             }
-            updateEditor(value.original, value.modified);
         }, 50);
     },
 );

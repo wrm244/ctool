@@ -36,7 +36,8 @@ window['$copy'] = (text: string) => {
 }
 // @ts-ignore
 window['$error'] = (err: any, isI18n = true) => {
-    const error = `${isError(err) ? err.message : err.toString()}`
+    // 安全获取错误信息：避免 null/undefined 调用 toString() 抛出异常
+    const error = isError(err) ? err.message : String(err ?? '')
     return isI18n ? $t('main_ui_error', [error]) : error
 }
 

@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import {onMounted, getCurrentInstance, watch} from "vue";
+import {onMounted, onUnmounted, getCurrentInstance, watch} from "vue";
 import tippy, {Instance as TippyInstance} from 'tippy.js';
 import 'tippy.js/dist/tippy.css'
 import 'tippy.js/animations/scale.css';
@@ -47,4 +47,10 @@ watch(() => {
         theme: storeTheme.theme
     }
 }, () => update(), {deep: true, immediate: true})
+
+onUnmounted(() => {
+    // 销毁 Tippy 实例，释放内存并移除全局事件监听
+    tooltip?.destroy();
+    tooltip = undefined;
+})
 </script>

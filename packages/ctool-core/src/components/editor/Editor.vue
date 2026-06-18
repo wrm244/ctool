@@ -162,7 +162,14 @@ onMounted(async () => {
     await create(<HTMLElement>container.value);
 });
 
-onUnmounted(() => editorView.value?.dispose());
+onUnmounted(() => {
+    editorView.value?.dispose();
+    // 清理未完成的回写定时器，防止内存泄漏
+    if (pendingValueTimer) {
+        clearInterval(pendingValueTimer);
+        pendingValueTimer = null;
+    }
+});
 
 const updateEditor = (text = "") => {
     if (!editorView.value) {
@@ -174,6 +181,8 @@ const updateEditor = (text = "") => {
 };
 
 // 回写内容
+let pendingValueTimer: ReturnType<typeof setInterval> | null = null;
+
 watch(
     () => {
         return {
@@ -181,16 +190,22 @@ watch(
         };
     },
     ({ value }) => {
+        // 清理旧定时器，避免多次 watch 触发时累积
+        if (pendingValueTimer) {
+            clearInterval(pendingValueTimer);
+            pendingValueTimer = null;
+        }
         if (editorView.value) {
             return updateEditor(value);
         }
-        
+
         // 防止初始内容变更 编辑器还没有初始化成功
-        const timer = setInterval(() => {
+        pendingValueTimer = setInterval(() => {
             if (editorView.value) {
-                clearInterval(timer);
+                updateEditor(value);
+                clearInterval(pendingValueTimer!);
+                pendingValueTimer = null;
             }
-            updateEditor(value);
         }, 50);
     },
 );

@@ -3,7 +3,8 @@ import QuickType from "./quickType";
 import Protobuf from "./protobuf";
 import Php from "./php/";
 import {HistorySerializable} from "@/types";
-import {has, isEmpty, merge} from "lodash";
+import {has, isEmpty} from "lodash";
+import {safeMerge} from "@/helper/safeMerge";
 
 const handlers: Transform[] = [
     new Protobuf,
@@ -100,7 +101,7 @@ export class Option implements HistorySerializable<Option> {
             item.lang = data.lang
         }
         if (has(data, 'option')) {
-            item.option = merge(item.option, data.option)
+            item.option = safeMerge(item.option, data.option)
         }
         return item
     }

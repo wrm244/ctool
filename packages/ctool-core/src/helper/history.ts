@@ -46,13 +46,20 @@ class History<T = any> {
 
     // 插入
     push(_item: T): void {
-        const item: T = cloneDeep(_item)
-        // 过滤超大数据
-        const itemLength = JSON.stringify(item).length;
+        // 先序列化判断大小，避免对超大无效数据做深拷贝
+        let itemLength: number
+        try {
+            itemLength = JSON.stringify(_item).length;
+        } catch (e) {
+            console.warn('历史数据序列化失败，跳过保存:', e)
+            return;
+        }
         if (itemLength > HISTORY_MAX_SIZE) {
             console.log(`skip data too big:${itemLength} > ${HISTORY_MAX_SIZE}`)
             return;
         }
+
+        const item: T = cloneDeep(_item)
 
         // 与最新一致过滤
         if (
@@ -63,8 +70,8 @@ class History<T = any> {
             return;
         }
 
-        // 删除已有
-        for (let i = 0; i < this.lists.length; i++) {
+        // 删除已有：从后往前遍历删除，避免索引错位导致漏删
+        for (let i = this.lists.length - 1; i >= 0; i--) {
             if (isEqual(this.lists[i].v, item)) {
                 this.lists.splice(i, 1)
             }
@@ -104,6 +111,16 @@ class History<T = any> {
 
     all(): HistoryItemStructure<T>[] {
         return cloneDeep(this.lists)
+    }
+
+    // 根据条件查找历史数据索引，避免 all() 深拷贝全部数据
+    findIndex(predicate: (item: HistoryItemStructure<T>) => boolean): number {
+        for (let i = 0; i < this.lists.length; i++) {
+            if (predicate(this.lists[i])) {
+                return i;
+            }
+        }
+        return -1;
     }
 }
 

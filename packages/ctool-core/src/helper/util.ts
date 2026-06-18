@@ -1,12 +1,20 @@
 import {v4 as uuidV4} from 'uuid';
 import {InputBase, OutputBase, InputOutputBase, HistorySerializable} from "@/types";
 import {isObject} from "lodash";
-import rdiff from "recursive-diff";
 
-// 版本号
-export const version = document.querySelector('meta[name="ctool-version"]')?.getAttribute('content') || "dev"
-// 构建时间
-export const buildTimestamp = parseInt(document.querySelector('meta[name="ctool-build-timestamp"]')?.getAttribute('content') || `${Date.parse((new Date()).toString()) / 1000}`)
+// 版本号：提供 getter 供需要时获取，避免模块加载时 DOM 尚未就绪的风险
+export const getVersion = () =>
+    document.querySelector('meta[name="ctool-version"]')?.getAttribute('content') || "dev";
+
+// 版本号常量（保持兼容）
+export const version = getVersion();
+
+// 构建时间 getter
+export const getBuildTimestamp = () =>
+    parseInt(document.querySelector('meta[name="ctool-build-timestamp"]')?.getAttribute('content') || `${Date.parse((new Date()).toString()) / 1000}`);
+
+// 构建时间常量（保持兼容）
+export const buildTimestamp = getBuildTimestamp();
 
 // uuid
 export const uuid = (): string => {
@@ -36,8 +44,15 @@ export const instanceOfHistorySerializable = (object: any): object is HistorySer
     return isObject(object) && object['__'] === '_history_serializable_';
 }
 
-export const objectInObject = (A: any, B: any) => {
-    return rdiff.getDiff(B, A).filter(item => item.op !== "delete").length === 0
+// 判断对象 A 是否为对象 B 的子集：使用递归提前返回，避免生成完整差异数组
+export const objectInObject = (A: any, B: any): boolean => {
+    if (A === B) return true;
+    if (!isObject(A) || !isObject(B)) return false;
+    for (const key in A) {
+        if (!(key in B)) return false;
+        if (!objectInObject(A[key], B[key])) return false;
+    }
+    return true;
 }
 
 export const getInArrayOnlyOneItem = (value: string, lists: string[]) => {

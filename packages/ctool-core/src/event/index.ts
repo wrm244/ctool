@@ -22,17 +22,19 @@ const events = [
     'content_clear'
 ] as const
 
-type Event = typeof events[number]
-const eventName = (name: Event) => `ctool_${name}`
+type EventName = typeof events[number]
+const eventName = (name: EventName) => `ctool_${name}`
 
-type Listener = () => void
+// 事件监听器类型：接收原生 DOM Event，detail 可通过 event.detail 获取
+type Listener = (event: Event) => void
 
 const event = {
-    dispatch(name: Event, option: any = "") {
+    dispatch(name: EventName, option: any = "") {
         debug(`dispatch event:${name}${option ? ` option ${option}` : ""}`)
-        window.dispatchEvent(new CustomEvent(eventName(name)))
+        // 通过 CustomEvent.detail 传递事件数据，便于监听器消费
+        window.dispatchEvent(new CustomEvent(eventName(name), { detail: option }))
     },
-    addListener(name: Event | Event[], listener: Listener) {
+    addListener(name: EventName | EventName[], listener: Listener) {
         if (isArray(name)) {
             for (let item of name) {
                 this.addListener(item, listener)
@@ -41,7 +43,7 @@ const event = {
         }
         window.addEventListener(eventName(name), listener)
     },
-    removeListener(name: Event | Event[], listener: Listener) {
+    removeListener(name: EventName | EventName[], listener: Listener) {
         if (isArray(name)) {
             for (let item of name) {
                 this.removeListener(item, listener)
@@ -52,20 +54,29 @@ const event = {
     }
 }
 
-// 获取操作区域高度
+// 获取操作区域高度：缓存 padding 值，减少 getComputedStyle 调用
+let cachedPadding: number | null = null;
 const getMainOperateHeight = () => {
-    let el = document.querySelector<HTMLElement>('.ctool-main-tool')
+    const el = document.querySelector<HTMLElement>('.ctool-main-tool')
     if (!el) {
         return window.innerHeight;
     }
-    let styles = window.getComputedStyle(el);
-    return Math.ceil(el.clientHeight - (parseFloat(styles['paddingTop']) + parseFloat(styles['paddingBottom'])));
+    if (cachedPadding === null) {
+        const styles = window.getComputedStyle(el);
+        cachedPadding = parseFloat(styles['paddingTop']) + parseFloat(styles['paddingBottom']);
+    }
+    return Math.ceil(el.clientHeight - cachedPadding);
 }
+
+// 当窗口尺寸发生显著变化时，清除 padding 缓存（实际 padding 变化频率很低）
+// const clearPaddingCache = () => {
+//     cachedPadding = null;
+// };
 
 export let mainToolHeight = getMainOperateHeight()
 export const heightResizeDispatch = throttle(function () {
     event.dispatch('window_height_resize')
-    componentResizeDispatch()
+    // 高度变化时已经触发 component_resize，避免重复派发
 }, 500)
 
 export const componentResizeDispatch = throttle(function () {
@@ -78,6 +89,7 @@ window.addEventListener("resize", () => {
         mainToolHeight = temp
         heightResizeDispatch()
     }
+    // 无论主操作区高度是否变化，都需要通知组件重新布局
     componentResizeDispatch()
 });
 

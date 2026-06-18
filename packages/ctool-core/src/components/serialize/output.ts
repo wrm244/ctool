@@ -1,5 +1,6 @@
 import {HistorySerializable, SerializeOutputEncoderType, OutputBase} from "@/types";
-import {has, isEmpty, merge} from "lodash";
+import {has, isEmpty} from "lodash";
+import {safeMerge} from "@/helper/safeMerge";
 
 type Option = {
     text: {
@@ -73,7 +74,7 @@ export default class Output implements OutputBase<SerializeOutputEncoderType>, H
             item.type = data.type
         }
         if (has(data, 'option')) {
-            item.option = merge(item.option, data.option)
+            item.option = safeMerge(item.option, data.option)
         }
         return item
     }

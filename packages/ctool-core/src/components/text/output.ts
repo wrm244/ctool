@@ -1,7 +1,8 @@
 import {HistorySerializable, OutputBase, TextOutputEncoderType} from "@/types";
 import {Encoding} from "@/helper/text";
 import {FormatOptions as hexyFormatOptions} from "hexy";
-import {has, merge, isEmpty} from "lodash";
+import {has, isEmpty} from "lodash";
+import {safeMerge} from "@/helper/safeMerge";
 
 type Option = {
     base64: {
@@ -64,7 +65,7 @@ export default class Output implements OutputBase<TextOutputEncoderType>, Histor
             item.type = data.type
         }
         if (has(data, 'option')) {
-            item.option = merge(item.option, data.option)
+            item.option = safeMerge(item.option, data.option)
         }
         return item
     }

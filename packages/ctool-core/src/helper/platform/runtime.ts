@@ -53,8 +53,13 @@ export default class {
         return this.platformRuntime.storage?.() || web.storage();
     }
 
+    // 调用平台运行时自定义方法，不存在时抛出明确错误
     call<T = any>(method: string, ...param: any[]): T {
-        return this.platformRuntime[method]?.(...param);
+        const fn = this.platformRuntime[method];
+        if (typeof fn !== 'function') {
+            throw new Error(`平台运行时方法 '${method}' 不存在`);
+        }
+        return fn(...param);
     }
 
     getLocale() {

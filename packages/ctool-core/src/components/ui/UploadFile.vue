@@ -11,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-import {PropType, onMounted, onUnmounted} from "vue";
+import {PropType, onMounted, onUnmounted, ref} from "vue";
 import {UploadFileType, UploadFileMode, UploadFileButtonType, ComponentSizeType} from "@/types"
 
 const emit = defineEmits<{ (e: 'update:modelValue', value: string | File): void, (e: 'success', content: File): void }>()
@@ -43,6 +43,8 @@ const props = defineProps({
 })
 
 const fileInput = $ref<HTMLInputElement | null>(null)
+// 标记当前组件是否处于激活状态，避免多实例同时响应全局 paste 事件
+const isActive = ref(true)
 
 const accept = $computed(() => {
     if (props.type === "image") {
@@ -65,17 +67,19 @@ const handleUpload = () => {
 }
 const paste = (_event: Event) => {
     const event = _event as ClipboardEvent
-    if (!event.clipboardData || props.disabled) {
+    // 非激活或被禁用时忽略全局 paste 事件
+    if (!isActive.value || !event.clipboardData || props.disabled) {
         return;
     }
     let items = event.clipboardData.items;
-    let types = event.clipboardData.types || [];
     if (items && items.length) {
         for (let i = 0; i < items.length; i++) {
-            const file = items[i].getAsFile();
-            if (types[i] === 'Files' && file) {
+            const item = items[i];
+            const file = item.getAsFile();
+            // 严格校验 MIME 类型：图片模式仅接受 image/*
+            if (item.kind === 'file' && file) {
                 if (props.type === "image") {
-                    if (items[i].type.indexOf('image') !== -1) {
+                    if (file.type.startsWith('image/') || item.type.startsWith('image/')) {
                         success(file)
                     }
                 } else {
@@ -86,9 +90,11 @@ const paste = (_event: Event) => {
     }
 }
 onMounted(() => {
+    isActive.value = true;
     window.addEventListener("paste", paste);
 })
 onUnmounted(() => {
+    isActive.value = false;
     window.removeEventListener("paste", paste);
 })
 

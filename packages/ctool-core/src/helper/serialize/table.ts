@@ -1,12 +1,13 @@
 import {unescape, isArray} from "lodash";
+import {sanitizeHtml} from "@/helper/sanitize";
 
 const createTempElement = (innerHTML = "", type = "div", id = "") => {
     const el = document.createElement(type);
     el.id = id ? id : `ctool-temp-${Math.ceil(Math.random() * 99999)}`
     el.style.cssText = "display:none;"
+    // 先消毒 HTML 再写入 DOM，防御 XSS（移除 script、事件处理器等）
+    el.innerHTML = sanitizeHtml(innerHTML)
     document.body.appendChild(el);
-    // 移除script标签
-    el.innerHTML = innerHTML.replace(/<script/gmi, "<xxxxx")
     return el;
 }
 

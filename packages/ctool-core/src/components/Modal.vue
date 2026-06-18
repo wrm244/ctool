@@ -29,7 +29,7 @@
     </Teleport>
 </template>
 <script setup lang="ts">
-import {PropType, watch, onMounted, StyleValue} from "vue";
+import {PropType, watch, onMounted, onUnmounted, StyleValue} from "vue";
 import {ModalFooterType} from "@/types";
 import {sizeConvert} from "./util";
 
@@ -106,14 +106,22 @@ const update = () => {
     return show ? open() : close()
 }
 watch(() => show, () => update())
+const handleEscape = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') {
+        show = false
+    }
+}
+
 onMounted(() => {
-        update()
+    update()
     // esc 关闭
-    document.addEventListener('keydown', event => {
-        if (event.key === 'Escape') {
-            show = false
-        }
-    });
+    document.addEventListener('keydown', handleEscape);
+})
+
+onUnmounted(() => {
+    // 清理事件监听，防止内存泄漏和重复处理
+    document.removeEventListener('keydown', handleEscape);
+    document.removeEventListener('click', clickClose);
 })
 
 </script>

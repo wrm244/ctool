@@ -19,7 +19,7 @@
                     <slot :row="items" :index="index" name="column"/>
                 </template>
                 <template v-else v-for="column in columns">
-                    <td v-if="column.html" v-html="items[column.key]"/>
+                    <td v-if="column.html" v-html="sanitizeHtml(items[column.key])"/>
                     <td v-else>{{ items[column.key] }}</td>
                 </template>
                 <template v-if="$slots.default">
@@ -41,6 +41,7 @@
 import {TableConfig, TableLists} from "@/types"
 import {PropType, StyleValue} from "vue";
 import {sizeConvert} from "@/components/util";
+import {sanitizeHtml} from "@/helper/sanitize";
 
 const props = defineProps({
     columns: {
@@ -66,8 +67,9 @@ const props = defineProps({
 })
 
 const style = $computed(() => {
-    let css: StyleValue = {}
-    if (css.height) {
+    let css: StyleValue = {};
+    // 修复：应检查 props.height 是否传入，而非 css.height
+    if (props.height) {
         css.height = sizeConvert(props.height)
     }
     if (props.border) {

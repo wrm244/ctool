@@ -1,5 +1,6 @@
 import {InputBase, HistorySerializable, SerializeInputEncoderType} from "@/types";
-import {has, isEmpty, merge} from "lodash";
+import {has, isEmpty} from "lodash";
+import {safeMerge} from "@/helper/safeMerge";
 import Serialize from "@/helper/serialize";
 
 const _csvTableKeyedType = ['keyed', 'row_object', 'row_array', 'column_array'] as const
@@ -85,7 +86,7 @@ export default class Input implements InputBase<SerializeInputEncoderType>, Hist
             item.value = data.value
         }
         if (has(data, 'option')) {
-            item.option = merge(item.option, data.option)
+            item.option = safeMerge(item.option, data.option)
         }
         return item
     }

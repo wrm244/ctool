@@ -150,9 +150,10 @@ watch(
 );
 
 let current = $ref(dayjs().valueOf());
+// 每秒更新一次当前时间即可满足显示精度，降低 CPU 占用
 const currentTimer = setInterval(() => {
     current = dayjs().valueOf();
-}, 100);
+}, 1000);
 onUnmounted(() => {
     clearInterval(currentTimer);
 });

@@ -1,8 +1,9 @@
 // 页面操作
 import {defineStore} from '@/helper/pinia'
 import {reactive} from 'vue';
-import {getTool, ToolType, toolExists, categoryExists, tools, getCategory} from "@/config";
+import {getTool, ToolType, toolExists, categoryExists, tools, getCategory, FeatureInterface} from "@/config";
 import {useRouter, useRoute} from "vue-router";
+import {isEqual} from "lodash";
 import event from "@/event";
 
 interface Types {
@@ -53,7 +54,7 @@ export default defineStore(
             // 避免冗余导航：如果目标路由与当前路由完全一致则直接返回
             if (
                 route.path === targetPath &&
-                JSON.stringify(route.query) === JSON.stringify(targetQuery)
+                isEqual(route.query, targetQuery)
             ) {
                 event.dispatch('extend_page_close')
                 return Promise.resolve()
@@ -94,26 +95,24 @@ export default defineStore(
                 ...items.tool_last_feature,
                 [tool.name]: feature.name
             }
-            // 最近使用
+            // 最近使用：将当前项移到最前，避免多次 reverse 创建中间数组
             const recentlyKey = `${tool.name}-${feature.name}`
-            const recently = new Set(items.recently.reverse())
-            if (recently.has(recentlyKey)) {
-                recently.delete(recentlyKey)
-            }
-            recently.add(recentlyKey)
-            items.recently = Array.from(recently).reverse()
+            const recently = new Set(items.recently)
+            recently.delete(recentlyKey)
+            items.recently = [recentlyKey, ...Array.from(recently)]
             event.dispatch('tool_change')
             return true
         }
 
         const getRecently = () => {
-            return items.recently.filter(item => {
+            const result: FeatureInterface[] = [];
+            for (const item of items.recently) {
                 const [tool, feature] = item.split("-");
-                return toolExists(tool) && getTool(tool).existFeature(feature)
-            }).map(item => {
-                const [tool, feature] = item.split("-");
-                return getTool(tool as ToolType).getFeature(feature as any)
-            }) || []
+                if (toolExists(tool) && getTool(tool).existFeature(feature)) {
+                    result.push(getTool(tool as ToolType).getFeature(feature as any));
+                }
+            }
+            return result;
         }
 
         // 获取分类最后访问

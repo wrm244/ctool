@@ -8,8 +8,12 @@ import Tool from "@/Tool.vue";
 import { initPermission as initClipboardPermission } from "@/helper/clipboard";
 
 (async () => {
-    await initClipboardPermission();
-    if (document.body.clientWidth > 850 || platform.isUtools() || platform.isWeb() || platform.isDesktop()) {
+    try {
+        await initClipboardPermission();
+    } catch (e) {
+        console.error('剪贴板权限初始化失败:', e);
+    }
+    if (typeof document !== 'undefined' && (document.body.clientWidth > 850 || platform.isUtools() || platform.isWeb() || platform.isDesktop())) {
         const page = document.getElementById("ctool");
         if (page) {
             page.style.width = "auto";

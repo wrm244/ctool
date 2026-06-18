@@ -58,7 +58,8 @@ export const paste = async (force: boolean = false): Promise<string> => {
             navigator.clipboard
                 .readText()
                 .then(text => {
-                    return resolve(text ? text : "error");
+                    // 空内容或无权限统一返回空字符串，避免与有效内容混淆
+                    return resolve(text || "");
                 })
                 .catch(e => {
                     console.error(e);
@@ -70,43 +71,51 @@ export const paste = async (force: boolean = false): Promise<string> => {
     });
 };
 
+// 复制图片到剪贴板
 export const copyImage = (imageBase64: string, successCallback?: () => void) => {
-    if (imageBase64) {
-        if (permission !== "granted") {
-            throw new Error("剪贴板权限不足");
-        }
-
-        if (imageBase64.split(",").length < 1) {
-            throw new Error("图片格式错误");
-        }
-
-        // 图片转png 因为部分图片格式剪贴板展示不支持
-        // https://stackoverflow.com/questions/62909538/is-there-any-way-to-copy-image-to-clipboard-with-pure-javascript-without-librari
-
-        const inputImage = new Image();
-        inputImage.onload = function () {
-            const canvas = document.createElement("canvas");
-            canvas.width = inputImage.width;
-            canvas.height = inputImage.height;
-
-            const ctx = canvas.getContext("2d");
-            ctx?.drawImage(inputImage, 0, 0, inputImage.width, inputImage.height);
-
-            canvas.toBlob(blob => {
-                if (!blob) {
-                    throw new Error("Canvas 转换为 Blob 失败");
-                }
-                let data = [new window.ClipboardItem({ [blob.type]: blob })];
-                navigator.clipboard.write(data).then(
-                    () => successCallback && successCallback(),
-                    e => {
-                        throw e;
-                    },
-                );
-            }, "image/png");
-        };
-        inputImage.src = imageBase64;
+    if (!imageBase64) {
+        console.error("copyImage: 图片数据为空");
+        return;
     }
+    if (permission !== "granted") {
+        console.error("copyImage: 剪贴板权限不足");
+        return;
+    }
+    // 验证 Base64 图片基本格式
+    if (!imageBase64.includes(",")) {
+        console.error("copyImage: 图片格式错误，缺少 data URL 分隔符");
+        return;
+    }
+
+    const inputImage = new Image();
+    inputImage.onload = function () {
+        const canvas = document.createElement("canvas");
+        canvas.width = inputImage.width;
+        canvas.height = inputImage.height;
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+            console.error("copyImage: Canvas 获取 2D 上下文失败");
+            return;
+        }
+        ctx.drawImage(inputImage, 0, 0, inputImage.width, inputImage.height);
+
+        canvas.toBlob(blob => {
+            if (!blob) {
+                console.error("copyImage: Canvas 转换为 Blob 失败");
+                return;
+            }
+            const data = [new window.ClipboardItem({ [blob.type]: blob })];
+            navigator.clipboard.write(data).then(
+                () => successCallback && successCallback(),
+                e => console.error("copyImage: 写入剪贴板失败", e),
+            );
+        }, "image/png");
+    };
+    inputImage.onerror = () => {
+        console.error("copyImage: 图片加载失败");
+    };
+    inputImage.src = imageBase64;
 };
 
 export const useClipboardPermission = () => {

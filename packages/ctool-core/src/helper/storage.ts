@@ -5,15 +5,22 @@ import {isObject} from "lodash";
 import {isProxy, toRaw, unref} from "vue";
 import dayjs from "dayjs";
 
-const cacheVersion = version.split('.').join('');
+// 使用原始版本字符串作为缓存版本标识，避免 2.5.10 与 2.51.0 等版本号拼接后产生冲突
+const cacheVersion = version
 const timestamp = () => {
     return dayjs().unix()
 }
 
-const addKeyVersion = (key: string, is: boolean = true): string => `${is ? `v_${cacheVersion}_` : 'nv_'}${key}`
+// 为缓存 key 添加版本前缀，isVersion 为 true 表示使用版本控制
+const addKeyVersion = (key: string, isVersion: boolean = true): string => `${isVersion ? `v_${cacheVersion}_` : 'nv_'}${key}`
 
+// 对存储数据进行编码，expiry 为相对秒数，0 表示永不过期
 const encode = <T>(value: T, expiry: number = 0): StorageDataStructureInterface<T> => {
-    expiry = expiry ? expiry + timestamp() : 0
+    // 校验过期时间，避免负数导致数据立即过期或逻辑异常
+    if (expiry < 0) {
+        throw new Error('expiry 必须大于等于 0')
+    }
+    expiry = expiry > 0 ? expiry + timestamp() : 0
     value = unref(value)
     return {
         v: isProxy(value) ? toRaw(value) : value,
@@ -23,7 +30,8 @@ const encode = <T>(value: T, expiry: number = 0): StorageDataStructureInterface<
     }
 }
 
-const decode = <T>(data: StorageDataStructure<T>): StorageDataStructure<T> => {
+// 解码存储数据，格式非法时返回 null
+const decode = <T>(data: StorageDataStructure<T>): StorageDataStructure<T> | null => {
     if (
         !data
         || !isObject(data)
@@ -93,11 +101,14 @@ class StorageObject {
         this._handle.remove(key)
     }
 
-    // 移除过期数据
+    // 移除过期数据：直接读取原始数据并检查过期时间，避免嵌套调用 get 的额外开销
     flushExpired(): void {
-        for (let key of this.getAllKey()) {
-            // 获取一次 过期会自动删除
-            this.get(key)
+        const now = timestamp();
+        for (const key of this.getAllKey()) {
+            const raw = this._handle.get<StorageDataStructure<any>>(key);
+            if (raw && raw.e !== 0 && raw.e < now) {
+                this._handle.remove(key);
+            }
         }
     }
 
@@ -112,18 +123,22 @@ class StorageObject {
 
 const storage = new StorageObject(platform.runtime.storage)
 
+// 版本号前缀正则：提取为常量避免循环中重复编译
+const VERSION_KEY_RE = /^v_(.+?)_/;
+
 const clearExpireVersion = () => {
     const cacheVersionName = "cache_version";
     if (cacheVersion === storage.get(cacheVersionName)) {
         return;
     }
     storage.setNoVersion(cacheVersionName, cacheVersion)
-    for (let key of storage.getAllKey()) {
-        let c = /^v_(\d+)_/.exec(key)
-        if (c === null) {
+    for (const key of storage.getAllKey()) {
+        const match = VERSION_KEY_RE.exec(key)
+        if (match === null) {
             continue;
         }
-        if (cacheVersion !== c[1].trim()) {
+        // cacheVersion 现在使用原始版本字符串，直接比较
+        if (cacheVersion !== match[1]) {
             storage.delete(key)
         }
     }

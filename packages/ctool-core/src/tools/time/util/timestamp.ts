@@ -92,26 +92,34 @@ const transform = (input: string, timezone: string, format: Format | "auto" = "a
     }
 }
 
+// 预编译时间格式正则，避免 getTimeType 每次调用都重新创建
+const NORMAL_SECOND_RE = /^\d+-\d+-\d+ \d+:\d+:\d+$/;
+const NORMAL_MILLISECOND_RE = /^\d+-\d+-\d+ \d+:\d+:\d+\.\d{0,3}$/;
+const NORMAL_NANOSECOND_RE = /^\d+-\d+-\d+ \d+:\d+:\d+\.\d{4,9}$/;
+const UNIX_SECOND_RE = /^-?\d{1,12}$/;
+const UNIX_MILLISECOND_RE = /^-?\d{13,16}$/;
+const UNIX_NANOSECOND_RE = /^-?\d{17,}$/;
+
 const getTimeType = (input: string): TimeType => {
     if (input === "") {
         return {type: InputType.empty, format: Format.second}
     }
-    if ((new RegExp(/^\d+-\d+-\d+ \d+:\d+:\d+$/)).test(input)) {
+    if (NORMAL_SECOND_RE.test(input)) {
         return {type: InputType.normal, format: Format.second}
     }
-    if ((new RegExp(/^\d+-\d+-\d+ \d+:\d+:\d+\.\d{0,3}$/)).test(input)) {
+    if (NORMAL_MILLISECOND_RE.test(input)) {
         return {type: InputType.normal, format: Format.millisecond}
     }
-    if ((new RegExp(/^\d+-\d+-\d+ \d+:\d+:\d+\.\d{4,9}$/)).test(input)) {
+    if (NORMAL_NANOSECOND_RE.test(input)) {
         return {type: InputType.normal, format: Format.nanosecond}
     }
-    if ((new RegExp(/^-?\d{1,12}$/)).test(input)) {
+    if (UNIX_SECOND_RE.test(input)) {
         return {type: InputType.unix, format: Format.second}
     }
-    if ((new RegExp(/^-?\d{13,16}$/)).test(input)) {
+    if (UNIX_MILLISECOND_RE.test(input)) {
         return {type: InputType.unix, format: Format.millisecond}
     }
-    if ((new RegExp(/^-?\d{17,}$/)).test(input)) {
+    if (UNIX_NANOSECOND_RE.test(input)) {
         return {type: InputType.unix, format: Format.nanosecond}
     }
     return {type: InputType.error, format: Format.second}

@@ -18,30 +18,18 @@ const getMessage = (code: Locale, key: string) => {
     return text;
 }
 
+// 占位符正则，提取为常量避免每次翻译时重新创建
+const PLACEHOLDER_RE = new RegExp('{.+?}', 'g')
+
 const translate = (code: Locale, key: string, values: Record<string, any> = {}): string => {
     if (!key) return '';
 
-    let text = getMessage(code, key);
-
-    const matchRge = new RegExp('{.+?}', 'g')
-    const matchString = text.match(matchRge);
-    const replaceHash: Record<string, any> = {};
-    // 获取语言包对应翻译内容
-    let result = text;
-
-    if (matchString) {
-        matchString.forEach((wildcard) => {
-            let key = wildcard.replace("{", "").replace("}", '')
-            if ((key in values) && !(wildcard in replaceHash)) {
-                replaceHash[wildcard] = values[key]
-            }
-        });
-    }
-
-    result = result.replace(matchRge, (replacer) => {
-        return replacer in replaceHash ? replaceHash[replacer] : replacer;
+    const text = getMessage(code, key);
+    // 单次遍历文本完成占位符替换，避免多次 match/forEach/replace
+    return text.replace(PLACEHOLDER_RE, (wildcard) => {
+        const placeholderKey = wildcard.slice(1, -1); // 去掉首尾 { }
+        return placeholderKey in values ? String(values[placeholderKey]) : wildcard;
     });
-    return result;
 }
 
 export const $t = (key: string, values?: Record<string, any> | [], locale?: Locale) => {
@@ -64,10 +52,10 @@ export const $t = (key: string, values?: Record<string, any> | [], locale?: Loca
     return translate(locale, key, values)
 }
 
-// 设置当前语言
+// 设置当前语言：同步更新 html 标签的 data-locale 属性
 export const setCurrentLocale = (value: Locale) => {
     currentLocale = value
-    document.getElementsByTagName('html')[0].dataset.locale = value === "_default" ? DEFAULT_LOCALE : value
+    document.documentElement.dataset.locale = value === "_default" ? DEFAULT_LOCALE : value
     event.dispatch("locale_change", value)
 }
 

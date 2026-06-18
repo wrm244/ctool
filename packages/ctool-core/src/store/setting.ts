@@ -4,6 +4,7 @@ import {Locale, ThemeType, ThemeRawType} from "@/types"
 import {commonTool, ToolType} from "@/config"
 import {proxy} from "ctool-config"
 import {onMounted, watch, onUnmounted, nextTick} from 'vue';
+import {cloneDeep} from "lodash";
 import {setCurrentLocale} from '@/i18n';
 import event from "@/event";
 
@@ -54,7 +55,8 @@ const defaultValue: Setting = {
 }
 
 const useSetting = defineStore('setting', () => {
-    const items = $ref<Setting>(defaultValue)
+    // 深拷贝默认值，避免多个 store 实例或 HMR 时共享同一引用导致状态污染
+    const items = $ref<Setting>(cloneDeep(defaultValue))
 
     // 保存
     const save = <K extends keyof Setting>(key: K, value: Setting[K]) => {
@@ -73,6 +75,9 @@ const useSetting = defineStore('setting', () => {
         event.dispatch("theme_change", theme)
     })
 
+    // 系统主题变化监听器引用，用于卸载时清理
+    let systemThemeListener: (() => void) | null = null
+
     onMounted(() => {
         event.addListener('locale_change', async () => {
             await nextTick()
@@ -82,10 +87,21 @@ const useSetting = defineStore('setting', () => {
         // 初始化语言
         setCurrentLocale(items.locale)
         // 监控系统主题变化
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+        systemThemeListener = () => {
             items.theme === 'auto' && event.dispatch('theme_change', 'system change')
-        })
+        }
+        mediaQuery.addEventListener('change', systemThemeListener)
     })
+
+    onUnmounted(() => {
+        // 清理系统主题监听器，防止内存泄漏
+        if (systemThemeListener) {
+            window.matchMedia('(prefers-color-scheme: dark)').removeEventListener('change', systemThemeListener)
+            systemThemeListener = null
+        }
+    })
+
     return {
         items, save
     }

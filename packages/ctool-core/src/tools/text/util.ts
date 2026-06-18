@@ -13,15 +13,10 @@ const regExpQuote = function(str: string) {
 // GBK字符集实际长度计算
 const getGbkStrLength = (str: string) => {
     let realLength = 0;
-    let len = str.length;
-    let charCode = -1;
+    const len = str.length;
     for (let i = 0; i < len; i++) {
-        charCode = str.charCodeAt(i);
-        if (charCode >= 0 && charCode <= 128) {
-            realLength += 1;
-        } else {
-            realLength += 2;
-        }
+        const charCode = str.charCodeAt(i);
+        realLength += charCode >= 0 && charCode <= 128 ? 1 : 2;
     }
     return realLength;
 };
@@ -204,19 +199,21 @@ export default class {
         return this.text.replace(/\r?\n|\r/g, "");
     }
 
-    // 标点替换
+    // 标点替换：构建字符映射表，一次 replace 完成，避免 O(n*m) 多次正则替换
     replacePunctuation({ type = "zh" }: Record<string, any> = {}) {
         const zh = ["“", "”", "‘", "’", "。", "，", "；", "：", "？", "！", "……", "—", "～", "（", "）", "《", "》"];
         const en = ["\"", "\"", "'", "'", ".", ",", ";", ":", "?", "!", "…", "-", "~", "(", ")", "<", ">"];
-        let text = this.text;
-        for (let i in zh) {
-            text = text.replace(
-                new RegExp(regExpQuote(type === "zh" ? en[i] : zh[i]), "g"),
-                type === "zh" ? zh[i] : en[i],
-            );
+        const source = type === "zh" ? en : zh;
+        const target = type === "zh" ? zh : en;
+        const map = new Map<string, string>();
+        for (let i = 0; i < source.length; i++) {
+            map.set(source[i], target[i]);
         }
-        return text;
-
+        const pattern = new RegExp(
+            Array.from(map.keys()).map(k => regExpQuote(k)).join("|"),
+            "g"
+        );
+        return this.text.replace(pattern, (matched) => map.get(matched) || matched);
     }
 
     // 转义
@@ -248,17 +245,56 @@ export default class {
         });
     }
 
-    // 统计
+    // 统计：单次字符遍历完成分类计数，避免多次正则扫描
     stat() {
-        let content = this.text.replace(/\r?\n/g, "\n");
+        const content = this.text.replace(/\r?\n/g, "\n");
 
-        let zh_word = (content.match(/[\u4e00-\u9fa5]/g) || []).length;
-        let zh_punctuation = (content.match(/[\u3002\uff1f\uff01\uff0c\u3001\uff1b\uff1a\u201c\u201d\u2018\u2019\uff08\uff09\u300a\u300b\u3008\u3009\u3010\u3011\u300e\u300f\u300c\u300d\ufe43\ufe44\u3014\u3015\u2026\u2014\uff5e\ufe4f\uffe5]/g) || []).length;
-        let int_string = (content.match(/[0-9]/g) || []).length;
-        let en_string = (content.match(/[A-Za-z]/g) || []).length;
-        let int_word = (content.match(/\b\d+\b/g) || []).length;
-        let en_word = (content.match(/\b\w+\b/g) || []).length - int_word;
-        let en_punctuation = (content.match(/[~`!@#$%^&*()\-_+=|\\[\]{};:"',<.>/?]/g) || []).length;
+        let zh_word = 0;
+        let zh_punctuation = 0;
+        let int_string = 0;
+        let en_string = 0;
+        let int_word = 0;
+        let en_word = 0;
+        let en_punctuation = 0;
+
+        // 预编译正则，避免循环中重复创建
+        const zhCharRe = /[一-龥]/;
+        const zhPunctRe = /[。？！，、；：“”‘’（）《》〈〉【】『』「」﹃﹄〔〕…—～﹏￥]/;
+        const enPunctRe = /[~`!@#$%^&*()\-_+=|\\[\]{};:"',<.>/?]/;
+
+        let inNumber = false;
+        let inWord = false;
+
+        for (let i = 0; i < content.length; i++) {
+            const ch = content[i];
+            const code = content.charCodeAt(i);
+
+            if (zhCharRe.test(ch)) {
+                zh_word++;
+            } else if (zhPunctRe.test(ch)) {
+                zh_punctuation++;
+            } else if (code >= 48 && code <= 57) {
+                int_string++;
+                if (!inNumber) {
+                    inNumber = true;
+                    int_word++;
+                }
+            } else if ((code >= 65 && code <= 90) || (code >= 97 && code <= 122)) {
+                en_string++;
+                if (!inWord) {
+                    inWord = true;
+                    en_word++;
+                }
+            } else if (enPunctRe.test(ch)) {
+                en_punctuation++;
+            }
+
+            // 单词边界判断：非字母数字下划线视为边界
+            if (!(code >= 48 && code <= 57) && !((code >= 65 && code <= 90) || (code >= 97 && code <= 122)) && ch !== '_') {
+                inNumber = false;
+                inWord = false;
+            }
+        }
 
         return {
             // 字节数(utf8)
@@ -284,7 +320,7 @@ export default class {
             // 数字单词
             int_word,
             // 行数
-            line_length: this.text ? this.text.split("\n").length : 0,
+            line_length: this.text ? (content.match(/\n/g) || []).length + 1 : 0,
         };
     }
 }

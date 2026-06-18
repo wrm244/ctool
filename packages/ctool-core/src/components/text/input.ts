@@ -1,6 +1,7 @@
 import {InputBase, TextInputEncoderType, HistorySerializable} from "@/types";
 import Text, {Encoding} from "@/helper/text";
-import {has, isEmpty, merge} from "lodash";
+import {has, isEmpty} from "lodash";
+import {safeMerge} from "@/helper/safeMerge";
 
 type Option = {
     text: {
@@ -68,7 +69,7 @@ export default class Input implements InputBase<TextInputEncoderType, string | F
             item.value = data.value
         }
         if (has(data, 'option')) {
-            item.option = merge(item.option, data.option)
+            item.option = safeMerge(item.option, data.option)
         }
         return item
     }

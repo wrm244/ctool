@@ -24,6 +24,13 @@ class Text {
     public imageSizeString: string = "";
     // 是否为错误内容类型
     private _isError: boolean = false;
+    // 缓存文件类型分析结果，避免重复调用 filetype()
+    private _filetypeCache: ReturnType<typeof filetype> | null = null;
+    private _extensionCache: string | null = null;
+    private _mimeCache: string | null = null;
+    private _isTextCache: boolean | null = null;
+    private _isBinaryCache: boolean | null = null;
+    private _imageSizeCalculated: boolean = false;
 
     constructor(uint: Uint) {
         this.uint = uint;
@@ -51,6 +58,18 @@ class Text {
 
     static async fromUrl(url: string) {
         return new Promise<Text>(resolve => {
+            // 仅允许 http/https 协议，防止 file:// 等危险协议
+            let parsedUrl: URL;
+            try {
+                parsedUrl = new URL(url, window.location.href);
+            } catch (e) {
+                resolve(Text.fromError(`[${url}] URL 格式错误`));
+                return;
+            }
+            if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+                resolve(Text.fromError(`[${url}] 不支持的协议: ${parsedUrl.protocol}`));
+                return;
+            }
             const xhr = new XMLHttpRequest();
             xhr.open("GET", url);
             xhr.responseType = "blob";
@@ -159,7 +178,8 @@ class Text {
     toDown() {
         let objectUrl = window.URL.createObjectURL(new Blob([this.uint.uint8Array.buffer as ArrayBuffer], { type: this.mime() }));
         let aEle = document.createElement("a");
-        aEle.download = this.name();
+        // 清理文件名中的路径遍历字符，防止下载到非预期位置
+        aEle.download = this.name().replace(/[\\/]/g, "_");
         aEle.href = objectUrl;
         aEle.click();
         aEle.remove();
@@ -178,29 +198,49 @@ class Text {
     }
 
     extension(): string {
+        if (this._extensionCache !== null) {
+            return this._extensionCache;
+        }
         let temp = this.fileName.split(".")?.pop() || "";
         if (temp) {
-            return `.${temp}`;
+            this._extensionCache = `.${temp}`;
+            return this._extensionCache;
         }
         if (this.isText()) {
-            return ".txt";
+            this._extensionCache = ".txt";
+            return this._extensionCache;
         }
-        const type = filetype(this.uint.localUint8Array()).filter(item => !!item.extension);
-        return type.length > 0 ? `.${type[0].extension}` : "";
+        const type = this.getFiletype().filter(item => !!item.extension);
+        this._extensionCache = type.length > 0 ? `.${type[0].extension}` : "";
+        return this._extensionCache;
+    }
+
+    // 缓存 filetype() 调用结果
+    private getFiletype() {
+        if (this._filetypeCache === null) {
+            this._filetypeCache = filetype(this.uint.localUint8Array());
+        }
+        return this._filetypeCache;
     }
 
     mime() {
+        if (this._mimeCache !== null) {
+            return this._mimeCache;
+        }
         if (this.fileName) {
             const ext = this.fileName.split(".")?.pop() || "";
             if (ext && extMimeList.has(ext)) {
-                return extMimeList.get(ext);
+                this._mimeCache = extMimeList.get(ext) || "application/octet-stream";
+                return this._mimeCache;
             }
         }
-        const type = filetype(this.uint.localUint8Array()).filter(item => !!item.mime);
+        const type = this.getFiletype().filter(item => !!item.mime);
         if (type.length > 0 && type[0].mime) {
-            return type[0].mime;
+            this._mimeCache = type[0].mime;
+            return this._mimeCache;
         }
-        return this.isText() ? "text/plain" : "application/octet-stream";
+        this._mimeCache = this.isText() ? "text/plain" : "application/octet-stream";
+        return this._mimeCache;
     }
 
     isImage(): boolean {
@@ -208,11 +248,19 @@ class Text {
     }
 
     isText() {
-        return !this.isEmpty() && isText("", Buffer.from(this.uint.localUint8Array()));
+        if (this._isTextCache !== null) {
+            return this._isTextCache;
+        }
+        this._isTextCache = !this.isEmpty() && isText("", Buffer.from(this.uint.localUint8Array()));
+        return this._isTextCache;
     }
 
     isBinary() {
-        return !this.isEmpty() && isBinary("", Buffer.from(this.uint.localUint8Array()));
+        if (this._isBinaryCache !== null) {
+            return this._isBinaryCache;
+        }
+        this._isBinaryCache = !this.isEmpty() && isBinary("", Buffer.from(this.uint.localUint8Array()));
+        return this._isBinaryCache;
     }
 
     isAscii() {
@@ -237,11 +285,16 @@ class Text {
 
     setExtension(extension: string) {
         this.fileName = `ctool-${dayjs().format("YYYY-MM-DD-HH-mm-ss")}${extension}`;
+        // 文件名变化后清除依赖缓存
+        this._extensionCache = null;
+        this._mimeCache = null;
         return this;
     }
 
     setFileName(name: string) {
         this.fileName = name;
+        this._extensionCache = null;
+        this._mimeCache = null;
         return this;
     }
 
@@ -255,8 +308,12 @@ class Text {
 
     async calculateImageSize() {
         return new Promise<boolean>(resolve => {
+            // 已计算过尺寸直接返回，避免重复创建 Image 和 base64 编码
+            if (this._imageSizeCalculated && this.width !== undefined && this.height !== undefined) {
+                return resolve(true);
+            }
             if (!this.isImage()) {
-                resolve(false);
+                return resolve(false);
             }
             const img = new Image();
             img.onload = () => {
@@ -265,6 +322,7 @@ class Text {
                     this.height = Math.ceil(img.height);
                     this.imageSizeString = `${this.width} x ${this.height}`;
                 }
+                this._imageSizeCalculated = true;
                 resolve(true);
             };
             img.onerror = () => resolve(false);
