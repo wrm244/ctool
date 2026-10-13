@@ -32,7 +32,7 @@ import {toolKeywords} from "@/buildDataTemp";
 import {getTool, FeatureInterface} from "@/config";
 import useOperate from "@/store/operate";
 import useSetting from "@/store/setting";
-import {watch} from "vue";
+import {onUnmounted, watch} from "vue";
 
 const setting = useSetting()
 const operate = useOperate()
@@ -85,19 +85,27 @@ const close = () => {
     selectIndex = 0
 }
 
+const focusHandler = () => open();
+const documentClickHandler = (e: MouseEvent) => {
+    if (
+        inputElement?.contains(e.target as any)
+        || container?.contains(e.target as any)
+    ) {
+        return;
+    }
+    close()
+};
+
 const load = (element: HTMLInputElement) => {
     inputElement = element
-    element.addEventListener("focus", () => open());
-    document.addEventListener("click", (e: MouseEvent) => {
-        if (
-            element.contains(e.target as any)
-            || container?.contains(e.target as any)
-        ) {
-            return;
-        }
-        close()
-    });
+    element.addEventListener("focus", focusHandler);
+    document.addEventListener("click", documentClickHandler);
 }
+
+onUnmounted(() => {
+    inputElement?.removeEventListener("focus", focusHandler);
+    document.removeEventListener("click", documentClickHandler);
+});
 
 const select = (index: number) => {
     if (items.length === 0 || items.length - 1 < index) {

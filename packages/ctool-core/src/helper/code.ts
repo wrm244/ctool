@@ -118,7 +118,8 @@ export const getDisplayName = (land: string): string => {
 
     const language = getSourceLanguage(land);
     if (language !== null) {
-        return language.aliases ? language.aliases[0] : language.id;
+        // aliases 可能为空数组，需回退到 id
+        return language.aliases?.length ? language.aliases[0] : language.id;
     }
 
     return land;
@@ -129,7 +130,7 @@ export const getAllLanguage = (): string[] => {
     if (languageMap !== null) {
         const seen = new Set<string>();
         for (const lang of languageMap.values()) {
-            const name = lang.aliases ? lang.aliases[0] : lang.id;
+            const name = lang.aliases?.length ? lang.aliases[0] : lang.id;
             if (!seen.has(name)) {
                 seen.add(name);
                 lists.push(name);

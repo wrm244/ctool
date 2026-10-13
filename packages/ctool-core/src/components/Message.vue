@@ -43,6 +43,8 @@ const props = defineProps({
 const container = $ref<HTMLDialogElement | null>(null)
 
 let show = $ref(false)
+// 延迟注册 click 监听器的定时器，卸载时需清理避免在卸载后添加监听
+let clickTimer: ReturnType<typeof setTimeout> | null = null
 
 const open = () => {
     show = true
@@ -66,10 +68,14 @@ const clickClose = (event: MouseEvent) => {
 }
 
 onMounted(() => {
-    setTimeout(() => document.addEventListener('click', clickClose), 100)
+    clickTimer = setTimeout(() => document.addEventListener('click', clickClose), 100)
 })
 
 onUnmounted(() => {
+    if (clickTimer) {
+        clearTimeout(clickTimer)
+        clickTimer = null
+    }
     document.removeEventListener('click', clickClose);
 })
 

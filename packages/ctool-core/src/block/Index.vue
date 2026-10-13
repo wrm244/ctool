@@ -31,7 +31,7 @@ const init = () => {
     }
 
     // 常用第一个
-    redirect.tool = useSetting().items.common.filter(item => toolExists(item))[0] || ""
+    redirect.tool = useSetting().items.common.find(item => toolExists(item)) || ""
     if (toolExists(redirect.tool)) {
         return redirect
     }

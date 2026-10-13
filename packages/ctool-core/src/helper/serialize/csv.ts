@@ -36,10 +36,6 @@ const jsonOutputFormat = (json, type = "json", keyed_key = 0) => {
     return json
 }
 
-export const getKeyedField = (csv: string) => {
-    return Object.keys(csvParse(csv, {columns: true, skip_empty_lines: true})[0] || {})
-}
-
 export const parse = (csv = "", {type = "row_object", keyed_key = 0} = {}) => {
     return jsonOutputFormat(
         csvParse(csv, {columns: true, skip_empty_lines: true}),

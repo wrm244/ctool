@@ -26,7 +26,7 @@ const treeCreationRecursiveFn = function (keys, value, result) {
     const key = keys[0];
     if (keys.length === 1) {
         if (
-            typeof result[key] !== null &&
+            result[key] !== null &&
             typeof result[key] === 'object' &&
             typeof value === 'string'
         ) {

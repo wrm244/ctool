@@ -1,7 +1,7 @@
 import CryptoJS from "crypto-js";
 import { padEnd } from "lodash";
 
-export const modeMap = {
+const modeMap = {
     ECB: CryptoJS.mode.ECB,
     CBC: CryptoJS.mode.CBC,
     CTR: CryptoJS.mode.CTR,
@@ -12,7 +12,7 @@ export const modeMap = {
 export type ModeType = keyof typeof modeMap;
 export const modeLists = Object.keys(modeMap) as ModeType[];
 
-export const paddingMap = {
+const paddingMap = {
     Pkcs7: CryptoJS.pad.Pkcs7,
     Iso97971: CryptoJS.pad.Iso97971,
     AnsiX923: CryptoJS.pad.AnsiX923,
@@ -23,7 +23,7 @@ export const paddingMap = {
 export type PaddingType = keyof typeof paddingMap;
 export const paddingLists = Object.keys(paddingMap) as PaddingType[];
 
-export const keySizeMap = {
+const keySizeMap = {
     "128": 128,
     "192": 192,
     "256": 256,

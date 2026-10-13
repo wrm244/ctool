@@ -30,8 +30,12 @@ const routes: {
     ...toolRoutes.map((item: ToolRouteConfig) => {
         // 防御性校验：避免工具或功能不存在时导致路由构建崩溃
         const tool = getTool(item.tool);
+        if (!tool) {
+            console.error(`路由配置异常: tool=${item.tool}, feature=${item.feature}`);
+            return null;
+        }
         const feature = tool.getFeature(item.feature);
-        if (!tool || !feature) {
+        if (!feature) {
             console.error(`路由配置异常: tool=${item.tool}, feature=${item.feature}`);
             return null;
         }

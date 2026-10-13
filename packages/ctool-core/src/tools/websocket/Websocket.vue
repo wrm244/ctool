@@ -75,6 +75,8 @@ let retry = $ref(false)
 let retryTimes = 0
 let reconnecting = false
 let retryTimer: any = undefined
+// 组件是否已销毁：阻止 close 回调在卸载后再次启动重连定时器
+let destroyed = false
 
 const state = $ref<{
     status: "close" | "open" | "connecting",
@@ -108,24 +110,22 @@ const connect = () => {
     log($t('websocket_connect_start', [action.current.input]))
     try {
         let websocket = new WebSocket(action.current.input, action.current.protocols !== '' ? action.current.protocols.split(',') : undefined);
-        console.log(websocket)
-        websocket.addEventListener('open', (event) => {
-            console.log(event)
+        websocket.addEventListener('open', () => {
             state.status = "open";
             resetRetry()
             log($t('websocket_connect_ok'))
         })
-        websocket.addEventListener('close', (event) => {
-            console.log(event)
+        websocket.addEventListener('close', () => {
             state.status = "close";
             log($t('websocket_close_ok'))
-            if (retry) {
+            // destroyed 后不再重连，避免组件卸载后残留定时器
+            if (retry && !destroyed) {
                 if (reconnecting) {
                     return;
                 }
                 reconnecting = true
                 retryTimer = setInterval(() => {
-                    if (state.status !== 'close') {
+                    if (state.status !== 'close' || destroyed) {
                         return;
                     }
                     retryTimes = retryTimes + 1
@@ -135,16 +135,13 @@ const connect = () => {
             }
         })
         websocket.addEventListener('message', (event) => {
-            console.log(event)
             log(event.data, 'accept')
         })
-        websocket.addEventListener('error', (event) => {
-            console.log(event)
+        websocket.addEventListener('error', () => {
             log('Websocket Error')
         })
         state.ws = websocket;
     } catch (e) {
-        console.log(e)
         log($error(e))
     }
 }
@@ -164,6 +161,8 @@ const resetRetry = () => {
 
 // 组件卸载时关闭连接并清理重连定时器，防止资源泄漏
 onUnmounted(() => {
+    destroyed = true
+    retry = false
     resetRetry()
     state.ws?.close()
     state.ws = null

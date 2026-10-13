@@ -85,6 +85,10 @@ const props = defineProps({
 const storeTheme = useTheme();
 const container = ref<HTMLElement | null>(null);
 const editorView = shallowRef<monacoEditor.editor.IDiffEditor | null>(null);
+// 手动创建的 model 不归 diff editor 所有，需记录并在卸载时释放
+const ownedModels: monacoEditor.editor.ITextModel[] = [];
+// 组件是否已卸载：避免 monacoInit 异步完成后再创建编辑器造成实例泄漏
+let disposed = false;
 
 const lineWrapping = ref(!props.disableLineWrapping);
 const lineNumbers = ref(!props.disableLineNumbers);
@@ -119,8 +123,13 @@ const create = async (element: HTMLElement) => {
     monacoInit({
         "vs/nls": { availableLanguages: { "*": $t("main_locale") === "zh_CN" ? "zh-cn" : "en" } },
     }).then(monaco => {
+        // 组件已卸载则不再创建编辑器
+        if (disposed) {
+            return;
+        }
         const originalModel = monaco.editor.createModel(original.value);
         const modifiedModel = monaco.editor.createModel(modified.value);
+        ownedModels.push(originalModel, modifiedModel);
         
         const diffEditor = monaco.editor.createDiffEditor(element, {
             lineNumbers: lineNumbers.value ? "on" : "off",
@@ -195,7 +204,15 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+    disposed = true;
     editorView.value?.dispose();
+    // 释放手动创建的 model，避免重复挂载/卸载时内存泄漏
+    for (const model of ownedModels) {
+        if (!model.isDisposed()) {
+            model.dispose();
+        }
+    }
+    ownedModels.length = 0;
     // 清理未完成的回写定时器，防止内存泄漏
     if (pendingDiffTimer) {
         clearInterval(pendingDiffTimer);

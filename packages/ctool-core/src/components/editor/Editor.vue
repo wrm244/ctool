@@ -83,6 +83,8 @@ const container = ref<HTMLElement | null>(null);
 const editorView = shallowRef<monacoEditor.editor.IStandaloneCodeEditor | null>(null);
 const lineWrapping = ref(!props.disableLineWrapping);
 const lineNumbers = ref(!props.disableLineNumbers);
+// 组件是否已卸载：避免 monacoInit 异步完成后再创建编辑器造成实例泄漏
+let disposed = false;
 
 const getLanguage = (selectLang: string) => {
     let name: string = selectLang;
@@ -117,6 +119,10 @@ const create = async (element: HTMLElement) => {
     monacoInit({
         "vs/nls": { availableLanguages: { "*": $t("main_locale") === "zh_CN" ? "zh-cn" : "en" } },
     }).then(monaco => {
+        // 组件已卸载则不再创建编辑器
+        if (disposed) {
+            return;
+        }
         const editor = monaco.editor.create(element, {
             value: unref(modelValue.value),
             minimap: {
@@ -166,6 +172,7 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+    disposed = true;
     editorView.value?.dispose();
     // 清理未完成的回写定时器，防止内存泄漏
     if (pendingValueTimer) {

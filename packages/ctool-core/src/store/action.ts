@@ -270,8 +270,5 @@ export const useAction = <T extends Record<string, any>>(input: InitializeReturn
         current: current as T,
         save,
         success,
-        // 暴露 debounce 清理方法，组件卸载时调用防止内存泄漏
-        cancelSave: () => historyPush.cancel(),
-        flushSave: () => historyPush.flush(),
     };
 };

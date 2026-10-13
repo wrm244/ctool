@@ -2,7 +2,7 @@ import platform from "./platform";
 import { onUnmounted, ref } from "vue";
 
 // 剪贴板权限
-export let permission: PermissionState = "denied";
+let permission: PermissionState = "denied";
 
 // 初始化剪贴板权限
 export const initPermission = async () => {
