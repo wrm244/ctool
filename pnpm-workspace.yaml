@@ -1,18 +1,26 @@
 packages:
     - 'packages/**'
 
+onlyBuiltDependencies:
+    - esbuild
+
+overrides:
+    # prettier-plugin-java 精确锁定旧版，强制升级到最新（patch 级，兼容）
+    web-tree-sitter: ^0.26.12
+
 catalog:
-    '@types/lodash': ^4.17.24
-    '@types/node': ^22.0.0
-    '@vitejs/plugin-vue': ^6.0.7
+    '@types/lodash': ^4.17.25
+    '@types/node': ^26.2.0
+    '@vitejs/plugin-vue': ^6.0.8
     '@vueuse/core': ^11.3.0
     lodash: ^4.17.24
-    typescript: ^5.9.2
-    vite: ^8.0.16
-    tsup: ^8.5.1
-    axios: ^1.17.0
-    vue-tsc: ^2.2.12
-    vue: ^3.5.35
-    vue-router: ^4.6.4
-    '@vue/runtime-core': ^3.5.35
+    typescript: ^7.0.2
+    vite: ^8.2.1
+    tsdown: ^0.22.14
+    unrun: ^0.3.1
+    axios: ^1.19.0
+    vue-tsc: 3.3.11
+    vue: ^3.5.41
+    vue-router: ^5.2.0
+    '@vue/runtime-core': ^3.5.41
     dayjs: ^1.11.21

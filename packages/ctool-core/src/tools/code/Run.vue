@@ -58,6 +58,7 @@
 </template>
 
 <script lang="ts" setup>
+import Editor from "@/components/editor/Editor.vue";
 import {watch, onMounted} from "vue"
 import {useAction, initialize} from "@/store/action"
 import {language, getLanguage, getUsed, getConfig, setConfig, execute, Result} from "./runUtil"

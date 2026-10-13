@@ -58,7 +58,7 @@ export default class Output implements OutputBase<SerializeOutputEncoderType>, H
             option[this.type] = this.option[this.type]
         }
         return {
-            _: '_input_',
+            _: '_output_',
             __: '_history_serializable_',
             type: this.type,
             ...(isEmpty(option) ? {} : {option}),

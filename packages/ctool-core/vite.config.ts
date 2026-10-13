@@ -31,6 +31,9 @@ export default defineConfig({
     resolve: {
         alias: {
             "@": resolve(__dirname, "./src"),
+            // cron-parser 的 CronFileParser 引用 fs/promises（浏览器端不会执行），
+            // node-stdlib-browser 对其映射有缺陷，用空 stub 替代
+            "fs/promises": resolve(__dirname, "./src/statics/fsPromisesStub.ts"),
         },
     },
     build: {
@@ -48,6 +51,7 @@ export default defineConfig({
                             name: "monaco-editor",
                             test: /monaco-editor/,
                             priority: 30,
+                            includeDependenciesRecursively: false,
                         },
                         {
                             name: "vue-vendor",
@@ -58,36 +62,49 @@ export default defineConfig({
                             name: "crypto",
                             test: /[\\/]node_modules[\\/](crypto-js|sm-crypto)[\\/]/,
                             priority: 20,
+                            includeDependenciesRecursively: false,
                         },
                         {
                             name: "jsrsasign",
                             test: /[\\/]node_modules[\\/]jsrsasign[\\/]/,
                             priority: 20,
+                            includeDependenciesRecursively: false,
                         },
                         {
                             name: "quicktype",
                             test: /[\\/]node_modules[\\/]quicktype-core[\\/]/,
                             priority: 20,
+                            includeDependenciesRecursively: false,
                         },
                         {
                             name: "httpsnippet",
                             test: /[\\/]node_modules[\\/]@readme[\\/]httpsnippet[\\/]/,
                             priority: 20,
+                            includeDependenciesRecursively: false,
                         },
                         {
                             name: "mathjs",
                             test: /[\\/]node_modules[\\/]mathjs[\\/]/,
                             priority: 20,
+                            includeDependenciesRecursively: false,
                         },
                         {
                             name: "qrcode",
                             test: /[\\/]node_modules[\\/]qr-code-styling[\\/]/,
                             priority: 20,
+                            includeDependenciesRecursively: false,
                         },
                         {
                             name: "code-formatter",
-                            test: /[\\/]node_modules[\\/](prettier|html-minifier-terser|uglify-js-export|sql-formatter|csso)[\\/]/,
+                            test: /[\\/]node_modules[\\/](prettier(?:-plugin-java)?|@prettier[\\/]plugin-php|html-minifier-terser|uglify-js-export|sql-formatter|csso)[\\/]/,
                             priority: 15,
+                            includeDependenciesRecursively: false,
+                        },
+                        {
+                            name: "tool-libs",
+                            test: /[\\/]node_modules[\\/](a-color-picker|composerize-ts|cronstrue|crc|jsbarcode|nzh|netmask|ip6|qrcode-parser|pinyin-pro|xlsx|web-tree-sitter|marked|diff|jsonpath-plus|jmespath|ajv|ajv-i18n)[\\/]/,
+                            priority: 20,
+                            includeDependenciesRecursively: false,
                         },
                         {
                             name: "vendor",
@@ -107,7 +124,16 @@ export default defineConfig({
                 },
             },
             onwarn(warning, defaultHandler) {
-                if (warning.code === "EVAL" && warning.message?.includes("vm-browserify")) {
+                // vm-browserify 与 web-tree-sitter 的 EVAL 警告均来自第三方包内部
+                // （node-stdlib-browser 的 VM 模拟 / emscripten 生成代码的常量表求值），
+                // 项目代码自身不存在 eval，仅对这两个包做精准过滤
+                if (
+                    warning.code === "EVAL"
+                    && (
+                        warning.message?.includes("vm-browserify")
+                        || warning.id?.includes("web-tree-sitter")
+                    )
+                ) {
                     return;
                 }
                 defaultHandler(warning);

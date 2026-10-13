@@ -1,21 +1,22 @@
 {
     "name": "ctool-config",
-    "main": "./dist/index.js",
-    "module": "./dist/esm/index.js",
-    "types": "./dist/index.d.ts",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.mjs",
+    "types": "./dist/index.d.mts",
     "scripts": {
-        "build": "pnpm exec tsup-node && node dist/generate.js"
+        "build": "pnpm exec tsdown && node dist/generate.cjs"
     },
     "dependencies": {
         "json5": "^2.2.3",
         "lodash": "catalog:",
-        "pinyin-pro": "^3.28.1",
+        "pinyin-pro": "^3.29.0",
         "svg-path-bounds": "^1.0.2"
     },
     "devDependencies": {
         "@types/lodash": "catalog:",
         "@types/node": "catalog:",
-        "tsup": "catalog:",
-        "typescript": "catalog:"
+        "typescript": "catalog:",
+        "tsdown": "catalog:",
+        "unrun": "catalog:"
     }
 }

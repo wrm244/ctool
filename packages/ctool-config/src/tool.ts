@@ -41,7 +41,8 @@ export default class Tool<T extends ToolType = any> implements ToolInterface<T> 
     }
 
     getFeature(name: FeatureType<T>) {
-        return this.features.filter(item => item.name === name)[0]
+        // find 避免 filter 创建中间数组；调用方需先通过 existFeature 判断存在性
+        return this.features.find(item => item.name === name) as FeatureInterface<T>
     }
 
     addCategory(category: CategoryInterface) {
@@ -49,7 +50,12 @@ export default class Tool<T extends ToolType = any> implements ToolInterface<T> 
     }
 
     inCategory(name: string): name is CategoryType {
-        return this.categories.map<string>(item => item.name).includes(name)
+        for (let i = 0; i < this.categories.length; i++) {
+            if (this.categories[i].name === name) {
+                return true
+            }
+        }
+        return false
     }
 
     firstCategory() {
@@ -61,7 +67,12 @@ export default class Tool<T extends ToolType = any> implements ToolInterface<T> 
     }
 
     existFeature(name: string): name is FeatureType<T> {
-        return this.features.map<string>(item => item.name).includes(name)
+        for (let i = 0; i < this.features.length; i++) {
+            if (this.features[i].name === name) {
+                return true
+            }
+        }
+        return false
     }
 
     isSimple() {

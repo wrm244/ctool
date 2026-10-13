@@ -42,7 +42,7 @@ const props = defineProps({
     },
     // 父组件语言判断函数
     langCallback: {
-        type: [Function, Boolean] as PropType<(() => string) | false>,
+        type: [Function, Boolean] as PropType<(() => string | undefined) | false>,
         default: () => {
             return false;
         },
@@ -158,7 +158,10 @@ const create = async (element: HTMLElement) => {
 };
 
 onMounted(async () => {
-    !props.disableClear && event.addListener("content_clear", () => updateEditor());
+    if (!props.disableClear) {
+        clearContentListener = () => updateEditor();
+        event.addListener("content_clear", clearContentListener);
+    }
     await create(<HTMLElement>container.value);
 });
 
@@ -169,7 +172,15 @@ onUnmounted(() => {
         clearInterval(pendingValueTimer);
         pendingValueTimer = null;
     }
+    // 移除 content_clear 监听器
+    if (clearContentListener) {
+        event.removeListener("content_clear", clearContentListener);
+        clearContentListener = null;
+    }
 });
+
+// content_clear 事件监听器引用，用于卸载时移除防止内存泄漏
+let clearContentListener: (() => void) | null = null;
 
 const updateEditor = (text = "") => {
     if (!editorView.value) {

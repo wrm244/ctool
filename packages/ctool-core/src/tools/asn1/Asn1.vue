@@ -20,6 +20,7 @@
 </template>
 
 <script lang="ts" setup>
+import Editor from "@/components/editor/Editor.vue";
 import { initialize, useAction } from "@/store/action";
 import { createTextInput } from "@/components/text";
 import { watch } from "vue";

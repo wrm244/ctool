@@ -69,10 +69,15 @@ const defaultTimezoneLists = [
     "Asia/Calcutta",
 ];
 
+// 正则提取为模块级常量，避免每次校验时重新编译
+const RE_NORMAL_TIME = /^\d+-\d+-\d+ \d+:\d+:\d+$/;
+const RE_NORMAL_TIME_MS = /^\d+-\d+-\d+ \d+:\d+:\d+\.\d+$/;
+
 const check = (value: string) => {
+    const input = value.trim();
     return (
-        new RegExp(/^\d+-\d+-\d+ \d+:\d+:\d+$/).test(value.trim()) ||
-        new RegExp(/^\d+-\d+-\d+ \d+:\d+:\d+\.\d+$/).test(value.trim())
+        RE_NORMAL_TIME.test(input) ||
+        RE_NORMAL_TIME_MS.test(input)
     );
 };
 

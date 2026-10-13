@@ -25,6 +25,7 @@
 </template>
 
 <script lang="ts" setup>
+import Editor from "@/components/editor/Editor.vue";
 import {PropType, watch} from "vue"
 import Serialize from "@/helper/serialize"
 import {getDisplayName} from "@/helper/code";

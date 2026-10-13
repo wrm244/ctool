@@ -90,7 +90,7 @@ watch(() => {
         }
         list.push(msg);
         list.push("", $t('crontab_execute_time_list'));
-        let interval = parser.parseExpression(input);
+        let interval = parser.parse(input);
         for (let i = 1; i <= 10; i++) {
             list.push($t('crontab_no', [i, dayjs(interval.next().toString()).format("YYYY-MM-DD HH:mm:ss")]))
         }

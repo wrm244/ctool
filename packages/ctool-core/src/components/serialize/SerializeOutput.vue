@@ -48,6 +48,7 @@
 </template>
 
 <script setup lang="ts">
+import Editor from "@/components/editor/Editor.vue"
 import {SerializeOutput, createSerializeOutput} from "./index"
 import {nextTick, PropType, StyleValue, watch} from "vue"
 import {serializeOutputEncoderLists, SerializeOutputEncoderType} from "@/types"

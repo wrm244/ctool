@@ -19,6 +19,7 @@
 </template>
 
 <script lang="ts" setup>
+import Editor from "@/components/editor/Editor.vue";
 import {JSONPath} from "jsonpath-plus";
 import jmespath from "jmespath";
 import {PropType, watch} from "vue";

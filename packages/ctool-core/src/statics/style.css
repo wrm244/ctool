@@ -106,6 +106,15 @@ input, select, textarea {
     --form-element-placeholder-color: var(--ctool-placeholder-text-color);
 }
 
+html, body {
+    /* 页面本身不滚动:布局由 header + 内容区 + bottom 的 grid 撑满视口,
+       内容区内部滚动由各工具容器负责。禁止 body 滚动与 overscroll 橡皮筋,
+       避免滑到底后继续滑动露出空白区域 */
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+}
+
 body {
     font-family: Helvetica Neue, Helvetica, PingFang SC, Hiragino Sans GB, Microsoft YaHei, \5fae\8f6f\96c5\9ed1, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;

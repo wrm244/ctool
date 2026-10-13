@@ -173,6 +173,7 @@
 </template>
 
 <script lang="ts" setup>
+import Editor from "@/components/editor/Editor.vue";
 import { initialize, useAction } from "@/store/action";
 import TextHandle, { escapeChars, EscapeCharsType } from "./util";
 import { getCommonExpression } from "../regex/util";

@@ -65,6 +65,7 @@
 </template>
 
 <script setup lang="ts">
+import Editor from "@/components/editor/Editor.vue"
 import {SerializeInput, createSerializeInput} from "./index"
 import {csvTableKeyedType} from "./input"
 import {serializeInputEncoderLists, SerializeInputEncoderType} from "@/types"

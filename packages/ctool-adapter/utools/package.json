@@ -1,11 +1,11 @@
 {
     "name": "ctool-adapter-utools",
-    "main": "./dist/index.js",
-    "module": "./dist/esm/index.js",
-    "types": "./dist/index.d.ts",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.mjs",
+    "types": "./dist/index.d.mts",
     "scripts": {
-        "build": "pnpm exec tsup-node",
-        "release": "node dist/release.js",
+        "build": "pnpm exec tsdown",
+        "release": "node dist/release.cjs",
         "adapter-build": "pnpm run build",
         "platform-release": "pnpm run release"
     },
@@ -15,8 +15,9 @@
     },
     "devDependencies": {
         "@types/node": "catalog:",
-        "tsup": "catalog:",
         "typescript": "catalog:",
-        "utools-api-types": "^3.0.0"
+        "utools-api-types": "^7.5.1",
+        "tsdown": "catalog:",
+        "unrun": "catalog:"
     }
 }

@@ -53,9 +53,14 @@ const props = defineProps({
     }
 })
 let closeI18n = $ref($t(`main_ui_close`));
-event.addListener("locale_change", () => {
-    closeI18n = $t(`main_ui_close`)
-});
+// locale_change 监听器引用，用于卸载时移除防止内存泄漏
+let localeChangeListener: (() => void) | null = null;
+if (typeof document !== 'undefined') {
+    localeChangeListener = () => {
+        closeI18n = $t(`main_ui_close`)
+    };
+    event.addListener("locale_change", localeChangeListener);
+}
 const closeTextI18n = $computed(() => {
     return props.closeText || closeI18n
 })
@@ -113,6 +118,10 @@ onMounted(() => {
 onUnmounted(() => {
     event.removeListener('extend_page_close', closeExtendPageListener)
     event.removeListener("window_height_resize", resize)
+    if (localeChangeListener) {
+        event.removeListener("locale_change", localeChangeListener);
+        localeChangeListener = null;
+    }
 })
 </script>
 

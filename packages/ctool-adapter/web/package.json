@@ -1,8 +1,8 @@
 {
     "name": "ctool-adapter-web",
     "scripts": {
-        "build": "pnpm exec tsup-node",
-        "release": "node dist/release.js",
+        "build": "pnpm exec tsdown",
+        "release": "node dist/release.cjs",
         "adapter-build": "pnpm run build",
         "platform-release": "pnpm run release"
     },
@@ -11,7 +11,8 @@
     },
     "devDependencies": {
         "@types/node": "catalog:",
-        "tsup": "catalog:",
-        "typescript": "catalog:"
+        "typescript": "catalog:",
+        "tsdown": "catalog:",
+        "unrun": "catalog:"
     }
 }

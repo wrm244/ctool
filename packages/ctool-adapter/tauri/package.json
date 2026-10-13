@@ -1,20 +1,19 @@
 {
     "name": "ctool-adapter-tauri",
-    "main": "./dist/index.js",
-    "module": "./dist/esm/index.js",
-    "types": "./dist/index.d.ts",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.mjs",
+    "types": "./dist/index.d.mts",
     "scripts": {
-        "build": "pnpm exec tsup-node",
-        "init": "node ./dist/init.js && pnpm tauri icon ./dist/web/icon/icon_1024.png",
-        "dev": "pnpm run build && pnpm run init && pnpm tauri dev",
-        "release": "pnpm run init && pnpm tauri build && node ./dist/release.js",
+        "build": "pnpm exec tsdown",
+        "init": "node ./dist/init.cjs && pnpm tauri icon ./dist/web/icon/icon_1024.png",
+        "release": "pnpm run init && pnpm tauri build && node ./dist/release.cjs",
         "adapter-build": "pnpm run build",
         "platform-release": "pnpm run release"
     },
     "dependencies": {
-        "@tauri-apps/api": "^2.11.0",
+        "@tauri-apps/api": "^2.11.1",
         "@tauri-apps/plugin-clipboard-manager": "~2",
-        "@tauri-apps/plugin-dialog": "~2",
+        "@tauri-apps/plugin-dialog": "^2.7.2",
         "@tauri-apps/plugin-fs": "~2",
         "@tauri-apps/plugin-global-shortcut": "~2",
         "@tauri-apps/plugin-http": "~2",
@@ -26,9 +25,10 @@
         "ctool-config": "workspace:*"
     },
     "devDependencies": {
-        "@tauri-apps/cli": "^2.11.2",
+        "@tauri-apps/cli": "^2.11.4",
         "@types/node": "catalog:",
-        "tsup": "catalog:",
-        "typescript": "catalog:"
+        "typescript": "catalog:",
+        "tsdown": "catalog:",
+        "unrun": "catalog:"
     }
 }

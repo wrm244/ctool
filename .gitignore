@@ -30,3 +30,6 @@ _temp
 todo_list.md
 
 .vercel
+
+# pnpm local store
+.pnpm-store

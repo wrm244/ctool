@@ -151,6 +151,7 @@
 </template>
 
 <script lang="ts" setup>
+import Editor from "@/components/editor/Editor.vue";
 import { createSerializeInput, createSerializeOutput } from "@/components/serialize";
 import { getDisplayName } from "@/helper/code";
 import Json from "@/helper/json";

@@ -8,6 +8,7 @@ import jsonWorker from "monaco-editor/esm/vs/language/json/json.worker?worker";
 import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
 import ContextMenu from "./contextMenu";
 import lineInfo from "./lineInfo";
+import { loadLanguages } from "@/helper/code";
 import "./style.css";
 
 self.MonacoEnvironment = {
@@ -39,7 +40,10 @@ const monacoInit = (params: Parameters<typeof loader.config>[0] = {}) => {
         monaco,
         ...params
     });
-    return loader.init();
+    // 同时等待 monaco 实例与语言映射就绪再返回：
+    // 若只等 loader.init()，编辑器创建时 languageMap 可能尚未构建，
+    // getEditorLanguage 会把 json 等语言降级为 plaintext，导致语法高亮丢失
+    return Promise.all([loader.init(), loadLanguages()]).then(([monaco]) => monaco);
 };
 
 export { ContextMenu, lineInfo, monacoEditor, monacoInit, monacoInstance };

@@ -18,6 +18,7 @@
 </template>
 
 <script lang="ts" setup>
+import Editor from "@/components/editor/Editor.vue";
 import {ref, computed, watch} from "vue"
 import {useAction, initialize} from "@/store/action"
 import formatter from "./formatter"

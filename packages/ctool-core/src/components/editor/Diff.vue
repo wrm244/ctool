@@ -126,7 +126,9 @@ const create = async (element: HTMLElement) => {
             lineNumbers: lineNumbers.value ? "on" : "off",
             wordWrap: lineWrapping.value ? "on" : "off",
             minimap: { enabled: false },
-            automaticLayout: false,
+            // 与 Editor.vue 保持一致：自动监听容器尺寸变化重排，
+            // 否则容器在创建后尺寸变化时 original 面板可能宽度为 0（只剩右半边）
+            automaticLayout: true,
             originalEditable: true,
             scrollBeyondLastLine: false,
             renderSideBySide: !inline.value,
@@ -185,7 +187,10 @@ const location = (type: "prev" | "next") => {
 };
 
 onMounted(async () => {
-    !props.disableClear && event.addListener("content_clear", () => updateEditor());
+    if (!props.disableClear) {
+        clearContentListener = () => updateEditor();
+        event.addListener("content_clear", clearContentListener);
+    }
     await create(<HTMLElement>container.value);
 });
 
@@ -196,7 +201,15 @@ onUnmounted(() => {
         clearInterval(pendingDiffTimer);
         pendingDiffTimer = null;
     }
+    // 移除 content_clear 监听器
+    if (clearContentListener) {
+        event.removeListener("content_clear", clearContentListener);
+        clearContentListener = null;
+    }
 });
+
+// content_clear 事件监听器引用，用于卸载时移除防止内存泄漏
+let clearContentListener: (() => void) | null = null;
 
 const updateEditor = (original = "", modified = "") => {
     if (!editorView.value) {

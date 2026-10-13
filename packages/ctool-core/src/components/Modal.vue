@@ -76,12 +76,16 @@ const clickClose = (event: MouseEvent) => {
 }
 
 const open = () => {
-        if (!container) {
+    if (!container) {
         return;
     }
     container.show()
+    // 延迟注册点击外部关闭：动画结束后再监听，避免动画期间误触发
     setTimeout(() => {
-        container && document.addEventListener('click', clickClose)
+        // 仅在仍处于打开状态时注册，避免关闭后残留监听器
+        if (container && show) {
+            document.addEventListener('click', clickClose)
+        }
     }, 300)
 }
 

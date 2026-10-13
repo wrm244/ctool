@@ -1,16 +1,18 @@
 {
     "name": "ctool-adapter-base",
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
+    "main": "./dist/index.cjs",
+    "types": "./dist/index.d.cts",
     "scripts": {
-        "build": "pnpm exec tsup-node"
+        "build": "pnpm exec tsdown",
+        "adapter-build": "pnpm run build"
     },
     "devDependencies": {
         "@types/node": "catalog:",
-        "tsup": "catalog:",
-        "typescript": "catalog:"
+        "typescript": "catalog:",
+        "tsdown": "catalog:",
+        "unrun": "catalog:"
     },
     "dependencies": {
-        "zip-a-folder": "^1.1.5"
+        "zip-a-folder": "^6.1.4"
     }
 }

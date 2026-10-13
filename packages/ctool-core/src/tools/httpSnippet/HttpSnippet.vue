@@ -33,6 +33,7 @@
 </template>
 
 <script lang="ts" setup>
+import Editor from "@/components/editor/Editor.vue";
 import {generate, targets, getTarget} from "./util";
 import {initialize, useAction} from "@/store/action";
 import {range} from 'lodash';

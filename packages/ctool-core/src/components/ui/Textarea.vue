@@ -19,7 +19,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import {PropType, onMounted} from "vue"
+import {PropType, onMounted, onUnmounted} from "vue"
 import {ButtonType, DisplayPosition} from "@/types";
 import {sizeConvert} from "@/components/util";
 import event from "@/event";
@@ -76,8 +76,21 @@ let current = $computed({
     }
 })
 
+// content_clear 事件监听器引用，用于卸载时移除防止内存泄漏
+let clearContentListener: (() => void) | null = null;
+
 onMounted(() => {
-    (!props.disableClear) && event.addListener('content_clear', () => current = "")
+    if (!props.disableClear) {
+        clearContentListener = () => (current = "");
+        event.addListener('content_clear', clearContentListener);
+    }
+})
+
+onUnmounted(() => {
+    if (clearContentListener) {
+        event.removeListener('content_clear', clearContentListener);
+        clearContentListener = null;
+    }
 })
 
 const clickFloatText = () => {

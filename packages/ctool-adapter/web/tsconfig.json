@@ -3,7 +3,7 @@
         "target": "ESNext",
         "useDefineForClassFields": true,
         "module": "ESNext",
-        "moduleResolution": "node",
+        "moduleResolution": "bundler",
         "strict": true,
         "jsx": "preserve",
         "sourceMap": true,
@@ -29,6 +29,3 @@
         "src/**/*.ts"
     ]
 }
-
-
-

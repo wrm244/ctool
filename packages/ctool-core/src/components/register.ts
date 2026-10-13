@@ -14,7 +14,6 @@ import TextInput from "./text/TextInput.vue";
 import TextOutput from "./text/TextOutput.vue";
 import SerializeInput from "./serialize/SerializeInput.vue";
 import SerializeOutput from "./serialize/SerializeOutput.vue";
-import Editor from "./editor/Editor.vue";
 import ExtendPage from "./ExtendPage.vue";
 import Card from "./ui/Card.vue";
 import Color from "./ui/Color.vue";
@@ -58,8 +57,6 @@ const components = {
     TextInput, TextOutput,
     // 序列化数据输入输出组件
     SerializeInput, SerializeOutput,
-    // 代码编辑器
-    Editor,
     // tabs
     Tabs,
     // 帮助按钮

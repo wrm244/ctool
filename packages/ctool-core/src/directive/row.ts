@@ -31,16 +31,11 @@ const update = (el: HTMLElement, value: string = "") => {
 
 export default (app: App) => {
     app.directive('row', {
+        // 只在插入/更新前执行一次，mounted/updated 重复执行同一逻辑属于无效开销
         beforeMount(el: HTMLElement, binding: { value: string }) {
             update(el, binding.value)
         },
-        mounted(el: HTMLElement, binding: { value: string }) {
-            update(el, binding.value)
-        },
         beforeUpdate(el: HTMLElement, binding: { value: string }) {
-            update(el, binding.value)
-        },
-        updated(el: HTMLElement, binding: { value: string }) {
             update(el, binding.value)
         },
     })

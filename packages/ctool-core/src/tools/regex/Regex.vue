@@ -54,6 +54,7 @@
 </template>
 
 <script lang="ts" setup>
+import Editor from "@/components/editor/Editor.vue";
 import { initialize, useAction } from "@/store/action";
 import { getCommonExpression } from "@/tools/regex/util";
 import { watch } from "vue";

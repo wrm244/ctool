@@ -11,12 +11,16 @@
     </HeightResize>
 </template>
 <script lang="ts" setup>
-import { watch } from "vue";
+import { ref, watch } from "vue";
 import { initialize, useAction } from "@/store/action";
-import { getAllLanguage } from "@/helper/code";
+import { getAllLanguage, loadLanguages } from "@/helper/code";
 import Diff from "@/components/editor/Diff.vue";
 
-const allLanguage = getAllLanguage();
+// 语言列表依赖 Monaco 加载完成：不阻塞页面渲染，加载完成后响应式更新下拉选项
+const allLanguage = ref<string[]>(getAllLanguage());
+loadLanguages().then(() => {
+    allLanguage.value = getAllLanguage();
+});
 
 type DataType = {
     original: string;

@@ -110,6 +110,8 @@ let content = $computed({
 
 let inputLeftWidth = $ref(0);
 let inputRightWidth = $ref(0);
+// content_clear 事件监听器引用，用于卸载时移除防止内存泄漏
+let clearContentListener: (() => void) | null = null;
 
 const style = $computed(() => {
     let css: StyleValue = {};
@@ -136,7 +138,10 @@ const inputStyle = $computed(() => {
 onMounted(() => {
     updatePadding();
     event.addListener("component_resize", updatePadding);
-    !props.disableClear && event.addListener("content_clear", () => (content = ""));
+    if (!props.disableClear) {
+        clearContentListener = () => (content = "");
+        event.addListener("content_clear", clearContentListener);
+    }
     if (container) {
         emit("load", container as HTMLInputElement);
     }
@@ -146,7 +151,12 @@ onUpdated(() => {
 });
 onUnmounted(() => {
     event.removeListener("component_resize", updatePadding);
+    if (clearContentListener) {
+        event.removeListener("content_clear", clearContentListener);
+        clearContentListener = null;
+    }
 });
+
 const updatePadding = () => {
     if (!inputLeft || !inputRight) {
         return;

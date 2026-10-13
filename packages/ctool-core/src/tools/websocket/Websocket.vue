@@ -61,7 +61,7 @@
 <script lang="ts" setup>
 import {initialize, useAction} from "@/store/action";
 import dayjs from "dayjs";
-import {nextTick} from "vue";
+import {nextTick, onUnmounted} from "vue";
 
 const action = useAction(await initialize({
     input: "wss://echo.websocket.events",
@@ -161,6 +161,14 @@ const resetRetry = () => {
     reconnecting = false
     clearInterval(retryTimer);
 }
+
+// 组件卸载时关闭连接并清理重连定时器，防止资源泄漏
+onUnmounted(() => {
+    resetRetry()
+    state.ws?.close()
+    state.ws = null
+    state.status = "close"
+})
 
 const send = () => {
     if (state.status !== 'open') {

@@ -106,6 +106,12 @@ dayjs.extend(timezone);
 
 const format = "auto" as Format | "auto";
 
+// 正则提取为模块级常量，避免每次粘贴校验时重新编译
+const RE_NORMAL_TIME = /^\d+-\d+-\d+ \d+:\d+:\d+$/;
+const RE_NORMAL_TIME_MS = /^\d+-\d+-\d+ \d+:\d+:\d+\.\d+$/;
+const RE_TIMESTAMP = /^-?\d{5,}$/;
+const RE_SCIENTIFIC = /^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$/;
+
 const action = useAction(
     await initialize(
         {
@@ -115,11 +121,11 @@ const action = useAction(
         },
         {
             paste: str =>
-                new RegExp(/^\d+-\d+-\d+ \d+:\d+:\d+$/).test(str) ||
-                new RegExp(/^\d+-\d+-\d+ \d+:\d+:\d+\.\d+$/).test(str) ||
-                new RegExp(/^-?\d{5,}$/).test(str) ||
+                RE_NORMAL_TIME.test(str) ||
+                RE_NORMAL_TIME_MS.test(str) ||
+                RE_TIMESTAMP.test(str) ||
                 // 科学计数法
-                new RegExp(/^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$/).test(str),
+                RE_SCIENTIFIC.test(str),
         },
     ),
 );

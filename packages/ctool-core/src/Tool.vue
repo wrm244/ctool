@@ -25,7 +25,6 @@ import ComplexBottom from "@/block/layout/complex/Bottom.vue";
 import ComplexHeader from "@/block/layout/complex/Header.vue";
 import SimpleBottom from "@/block/layout/simple/Bottom.vue";
 import SimpleHeader from "@/block/layout/simple/Header.vue";
-import { loadLanguages } from "@/helper/code";
 import platform from "@/helper/platform";
 import storage from "@/helper/storage";
 import useSetting, { useTheme } from "@/store/setting";
@@ -37,9 +36,6 @@ const storeSetting = useSetting();
 const router = useRouter();
 // 初始化主题
 useTheme();
-
-// 预加载 Monaco 语言列表，避免后续工具页面使用时阻塞
-loadLanguages();
 
 watch(
     () => {

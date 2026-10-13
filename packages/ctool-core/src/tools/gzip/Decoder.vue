@@ -24,7 +24,7 @@
 import {useAction, initialize} from "@/store/action"
 import {createTextInput, createTextOutput} from "@/components/text"
 import Text from "@/helper/text";
-import pako from "pako";
+import { inflate } from "pako";
 
 const action = useAction(await initialize({
     input: createTextInput('base64'),
@@ -41,7 +41,7 @@ const output = $computed(() => {
         return action.current.input.text
     }
     try {
-        return Text.fromUint8Array(pako.inflate(action.current.input.text.toUint8Array()))
+        return Text.fromUint8Array(inflate(action.current.input.text.toUint8Array()))
     } catch (e) {
         return Text.fromError($error(e))
     }

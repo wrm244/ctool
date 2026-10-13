@@ -20,6 +20,7 @@
     </HeightResize>
 </template>
 <script lang="ts" setup>
+import Editor from "@/components/editor/Editor.vue";
 import Ajv from "ajv"
 import AjvEn from "ajv-i18n/localize/en"
 import AjvZh from "ajv-i18n/localize/zh"

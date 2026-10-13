@@ -2,7 +2,6 @@ import { HTTPSnippet, HarRequest } from "@readme/httpsnippet";
 import Json from "@/helper/json";
 import curlToHar from "./curlToHar";
 import { ClientId, TargetId, targets as httpTargets } from "@readme/httpsnippet/targets";
-import { isArray } from "lodash";
 
 interface Entry {
     request: Partial<HarRequest>;
@@ -63,8 +62,10 @@ const convert = (items: HarEntry, target: string) => {
             ].join("\n\n");
         });
     }
+    // httpsnippet v11 的 convert 返回 (string | false)[]，过滤转换失败的条目
     const result = new HTTPSnippet(items).convert(targetInfo.targetId, targetInfo.clientId);
-    return result === false ? [""] : isArray(result) ? result : [result];
+    const lists = result.filter((item): item is string => item !== false);
+    return lists.length > 0 ? lists : [""];
 };
 
 export const targets = (() => {

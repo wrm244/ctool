@@ -26,5 +26,29 @@
     "dependencies": {
         "ctool-config": "workspace:*",
         "http-proxy": "^1.18.1"
+    },
+    "packageManager": "pnpm@10.29.2+sha512.bef43fa759d91fd2da4b319a5a0d13ef7a45bb985a3d7342058470f9d2051a3ba8674e629672654686ef9443ad13a82da2beb9eeb3e0221c87b8154fff9d74b8",
+    "workspaces": {
+        "packages": ["packages/**"],
+        "catalog": {
+            "@types/lodash": "^4.17.26",
+            "@types/node": "^26.6.5",
+            "@vitejs/plugin-vue": "^6.0.10",
+            "@vueuse/core": "^11.3.0",
+            "lodash": "^4.18.1",
+            "typescript": "^7.0.2",
+            "vite": "^8.3.4",
+            "tsdown": "^0.22.14",
+            "unrun": "^0.3.1",
+            "axios": "^1.19.0",
+            "vue-tsc": "3.3.11",
+            "vue": "^3.5.43",
+            "vue-router": "^5.4.0",
+            "@vue/runtime-core": "^3.5.43",
+            "dayjs": "^1.11.23"
+        }
+    },
+    "overrides": {
+        "web-tree-sitter": "^0.26.12"
     }
 }
