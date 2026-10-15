@@ -48,14 +48,16 @@
 </template>
 
 <script setup lang="ts">
-import Editor from "@/components/editor/Editor.vue"
 import {SerializeOutput, createSerializeOutput} from "./index"
-import {nextTick, PropType, StyleValue, watch} from "vue"
+import {defineAsyncComponent, nextTick, PropType, StyleValue, watch} from "vue"
 import {serializeOutputEncoderLists, SerializeOutputEncoderType} from "@/types"
 import Serialize from "@/helper/serialize"
 import formatter from "@/tools/code/formatter";
 import {sizeConvert} from "@/components/util";
 import {getDisplayName} from "@/helper/code";
+
+// 惰性加载代码编辑器：避免 monaco（约 4MB）被入口同步预加载
+const Editor = defineAsyncComponent(() => import("@/components/editor/Editor.vue"));
 
 const props = defineProps({
     modelValue: {

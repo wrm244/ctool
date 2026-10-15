@@ -1,6 +1,7 @@
 {
     "name": "ctool-site",
     "private": true,
+    "type": "module",
     "scripts": {
         "check": "vue-tsc -b",
         "dev": "pnpm run check && vite --host",
@@ -15,7 +16,7 @@
     "devDependencies": {
         "@types/node": "catalog:",
         "@vitejs/plugin-vue": "catalog:",
-        "typescript": "^5.9.3",
+        "typescript": "catalog:",
         "vite": "catalog:",
         "vite-plugin-html-config": "^2.0.2",
         "vite-plugin-pwa": "^1.0.0",

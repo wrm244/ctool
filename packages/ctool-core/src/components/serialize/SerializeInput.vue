@@ -65,15 +65,17 @@
 </template>
 
 <script setup lang="ts">
-import Editor from "@/components/editor/Editor.vue"
 import {SerializeInput, createSerializeInput} from "./index"
 import {csvTableKeyedType} from "./input"
 import {serializeInputEncoderLists, SerializeInputEncoderType} from "@/types"
-import {nextTick, PropType, StyleValue, toRaw, watch} from "vue"
+import {defineAsyncComponent, nextTick, PropType, StyleValue, toRaw, watch} from "vue"
 import Serialize from "@/helper/serialize"
 import {debounce} from "lodash";
 import {sizeConvert} from "@/components/util";
 import {getDisplayName} from "@/helper/code";
+
+// 惰性加载代码编辑器：避免 monaco（约 4MB）被入口同步预加载
+const Editor = defineAsyncComponent(() => import("@/components/editor/Editor.vue"));
 
 const props = defineProps({
     modelValue: {
