@@ -12,11 +12,9 @@ const hash = ({ input, rounds, version }: { input: string, rounds: number, versi
     // Generate the salt
     let salt = bcrypt.genSaltSync(rounds);
 
-    // Simulate version by replacing the prefix of the salt
-    if (version === "2y") {
-        salt = salt.replace(/\$2a\$/, "$2y$");
-    } else if (version === "2b") {
-        salt = salt.replace(/\$2a\$/, "$2b$");
+    // bcryptjs 3.x 固定生成 $2b$ 前缀，按用户选择的版本改写前缀即可
+    if (version !== "2b") {
+        salt = salt.replace(/^\$2[aby]\$/, `$${version}$`);
     }
 
     // Hash the input with the modified salt

@@ -28,6 +28,37 @@ export default defineConfig({
         vue(),
         ReactivityTransform(),
     ],
+    worker: {
+        // bcryptjs 会 import Node 的 crypto 作为 WebCrypto 的兜底（包内已声明 browser.crypto=false）。
+        // 主构建里该 polyfill 依赖注入的 global/Buffer/process shim 才能运行，但 worker 构建不会
+        // 继承这些注入，导致 bcrypt worker 启动即抛 `global is not defined`，且体积膨胀到数百 KB。
+        // 这里只在 worker 环境把 crypto 置空，让 bcryptjs 走浏览器原生 crypto.getRandomValues。
+        plugins: () => [
+            {
+                name: "ctool-worker-crypto-stub",
+                enforce: "pre",
+                resolveId(source) {
+                    // vite-plugin-node-polyfills 的 resolve.alias 会先把 `crypto` 改写为
+                    // crypto-browserify 的绝对路径，因此这里要同时匹配原始名与改写后的目标。
+                    if (
+                        source === "crypto"
+                        || source === "node:crypto"
+                        || source === "crypto/promises"
+                        || source.includes("/crypto-browserify")
+                    ) {
+                        return "\0ctool-empty-crypto";
+                    }
+                    return null;
+                },
+                load(id) {
+                    if (id === "\0ctool-empty-crypto") {
+                        return "export default {};";
+                    }
+                    return null;
+                },
+            },
+        ],
+    },
     resolve: {
         alias: {
             "@": resolve(__dirname, "./src"),

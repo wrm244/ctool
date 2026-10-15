@@ -141,6 +141,10 @@ const create = async (element: HTMLElement) => {
             originalEditable: true,
             scrollBeyondLastLine: false,
             renderSideBySide: !inline.value,
+            // Monaco 默认在容器较窄（< renderSideBySideInlineBreakpoint，默认 900px）时
+            // 自动退回内联视图，导致 original 面板被压缩得几乎不可见（看起来只剩一个编辑框）。
+            // 这里禁用该自动行为，交由组件的「内联模式」开关显式控制。
+            useInlineViewWhenSpaceIsLimited: false,
             enableSplitViewResizing: false,
             scrollbar: {
                 verticalScrollbarSize: 5,
