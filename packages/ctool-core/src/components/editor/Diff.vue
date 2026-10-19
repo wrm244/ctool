@@ -145,6 +145,11 @@ const create = async (element: HTMLElement) => {
             // 自动退回内联视图，导致 original 面板被压缩得几乎不可见（看起来只剩一个编辑框）。
             // 这里禁用该自动行为，交由组件的「内联模式」开关显式控制。
             useInlineViewWhenSpaceIsLimited: false,
+            // 禁用行内 hunk 菜单（DiffEditorGutter）。该功能在模型内容被清空/大幅收缩时，
+            // 会用还未重算的旧 diff 映射去计算行位置，触发 Monaco 内部
+            // "Illegal value for lineNumber"（getBottomForLineNumber -> getLineMaxColumn）。
+            // 本工具的 UI 未使用该侧边栏菜单，保留 renderMarginRevertIcon 的回退箭头即可。
+            renderGutterMenu: false,
             enableSplitViewResizing: false,
             scrollbar: {
                 verticalScrollbarSize: 5,
