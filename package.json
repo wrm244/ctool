@@ -15,12 +15,14 @@
         "release": "node release.cjs && pnpm run build && pnpm -r run platform-release",
         "only-release": "node release.cjs && pnpm -r run platform-release",
         "vercel-build": "pnpm run build && pnpm --filter ctool-site run build",
+        "deploy:cloudflare": "wrangler deploy",
         "clear": "node clear.cjs"
     },
     "devDependencies": {
         "@types/http-proxy": "^1.17.17",
         "@types/node": "catalog:",
         "@vercel/node": "^2.15.10",
+        "wrangler": "4.151.3",
         "typescript": "catalog:"
     },
     "dependencies": {

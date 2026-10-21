@@ -1,0 +1,29 @@
+// Cloudflare Workers 部署配置（Workers Builds / `wrangler deploy`）
+//
+// 坑：仓库根是 pnpm workspace，wrangler 在"没有配置文件"时会走 autoconfig 的应用探测，
+// 探测逻辑跑到 workspace 根会直接报错：
+//   ✘ The Cloudflare application detection logic has been run in the root of a workspace
+//      instead of targeting a specific project.
+// 所以这里显式提供配置，让 wrangler 跳过探测，直接在仓库根部署。
+//
+// 部署产物是 packages/ctool-site/dist（站点 + 复制进来的 ctool-core/dist），
+// 由根目录 `pnpm run vercel-build` 生成；dashboard 里的 Build command 就用它。
+{
+    "$schema": "./node_modules/wrangler/config-schema.json",
+    // ⚠️ 必须和 Cloudflare dashboard 里创建的 Worker 名称一致，否则部署会报 name 不匹配
+    "name": "ctool",
+    // 建议保持在今天或更晚的日期
+    "compatibility_date": "2026-10-21",
+    // 静态站 + 少量动态路由（/api/proxy、/privacy），见 cloudflare/index.ts
+    "main": "./cloudflare/index.ts",
+    "assets": {
+        "directory": "./packages/ctool-site/dist",
+        // 让 /api/* 与 /privacy 一定进 Worker，其余命中静态资源则直接由边缘返回
+        "run_worker_first": ["/api/*", "/privacy"],
+        "not_found_handling": "single-page-application",
+        "binding": "ASSETS"
+    },
+    "observability": {
+        "enabled": true
+    }
+}

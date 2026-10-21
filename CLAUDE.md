@@ -68,6 +68,21 @@ Build the Vercel/PWA site:
 pnpm run vercel-build
 ```
 
+Deploy the site to Cloudflare Workers:
+
+```bash
+pnpm exec wrangler deploy --dry-run   # 本地校验配置与静态资源
+pnpm run deploy:cloudflare            # 需先登录：pnpm exec wrangler login
+```
+
+Cloudflare 部署由根目录 `wrangler.jsonc` 定义，静态资源目录是 `packages/ctool-site/dist`，
+动态路由（`/api/proxy`、`/privacy`）在 `cloudflare/index.ts`。Cloudflare Workers Builds 里：
+Build command 用 `pnpm run vercel-build`，Deploy command 用 `npx wrangler deploy`，
+root directory 保持仓库根（不要改成子包），否则 pnpm workspace 装不全依赖。
+`wrangler.jsonc` 里的 `name` 必须与 dashboard 里的 Worker 名称一致。
+注意：仓库根是 workspace 根，如果删掉 `wrangler.jsonc`，`wrangler deploy` 会走应用自动探测并报
+`The Cloudflare application detection logic has been run in the root of a workspace`。
+
 Clear generated dist/release artifacts:
 
 ```bash

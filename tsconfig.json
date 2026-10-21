@@ -21,6 +21,7 @@
         ]
     },
     "include": [
-        "api/**/*.ts"
+        "api/**/*.ts",
+        "cloudflare/**/*.ts"
     ]
 }
