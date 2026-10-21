@@ -1,0 +1,278 @@
+/*
+ * 首屏启动骨架（boot skeleton）
+ *
+ * 用途：首屏关键路径要下载并执行约 1.7MB(gzip) 的 JS，期间 #app 是空的，浏览器给的是全白/全黑。
+ * 这套骨架在 JS 执行前就能画出与真实 complex 布局同形的壳，撤下时零跳变。
+ *
+ * ⚠️ 同步维护：tool.html 里 <style id="ctool-boot-style"> 是本文件的内联副本
+ *    （必须内联，否则 JS 执行前没有样式）。改这里时请同步那份副本。
+ *    index.html 里另有一份最小版本。
+ */
+
+.ctool-boot {
+    /* 取色与 style.css 的 [data-theme] 保持一致 */
+    --ctool-boot-bg: #ffffff;
+    --ctool-boot-bar-bg: #f7f7f7;
+    --ctool-boot-border: #dcdfe6;
+    --ctool-boot-chip: #e9ebef;
+    --ctool-boot-chip-strong: #dfe2e7;
+    --ctool-boot-primary: #1abc9c;
+
+    box-sizing: border-box;
+    display: grid;
+    /* 与 complex 布局对齐：分类栏 33 / 工具标签 36 / 功能标签 26 / 内容 / 状态栏 33 */
+    grid-template-rows: 33px 36px 26px minmax(0, 1fr) 33px;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    background-color: var(--ctool-boot-bg);
+}
+
+/* 首屏由 tool.html 内联时覆盖整屏；Suspense fallback 直接在文档流里 */
+.ctool-boot--overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+}
+
+/* 撤下时淡出，避免骨架和真实 UI 硬切 */
+.ctool-boot--done {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+}
+
+.ctool-boot-top {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 0 15px;
+    background-color: var(--ctool-boot-bar-bg);
+    border-bottom: 1px solid var(--ctool-boot-border);
+    overflow: hidden;
+}
+
+.ctool-boot-tabs {
+    position: relative;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    /* 与 .ctool-header-middle 的 padding 对齐 */
+    padding: 10px 15px 5px;
+    overflow: hidden;
+}
+
+/* 页面级不定态进度条，贴着标签行底边 */
+.ctool-boot-tabs::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 45%;
+    height: 2px;
+    background-color: var(--ctool-boot-primary);
+    animation: ctool-boot-slide 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.ctool-boot-features {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--ctool-boot-border);
+    overflow: hidden;
+}
+
+.ctool-boot-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 0 15px;
+    overflow: hidden;
+}
+
+.ctool-boot-foot {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 15px;
+    background-color: var(--ctool-boot-bar-bg);
+    border-top: 1px solid var(--ctool-boot-border);
+    overflow: hidden;
+}
+
+.ctool-boot-spacer {
+    margin-left: auto;
+}
+
+.ctool-boot-chip {
+    display: block;
+    flex: none;
+    height: 10px;
+    border-radius: 3px;
+    background-color: var(--ctool-boot-chip);
+}
+
+.ctool-boot-chip--strong {
+    background-color: var(--ctool-boot-chip-strong);
+}
+
+.ctool-boot-chip.w-1 { width: 24px; }
+.ctool-boot-chip.w-2 { width: 34px; }
+.ctool-boot-chip.w-3 { width: 46px; }
+.ctool-boot-chip.w-4 { width: 58px; }
+.ctool-boot-chip.w-5 { width: 74px; }
+.ctool-boot-chip.w-6 { width: 92px; }
+
+/* 内容区 logo：官方 glyph，品牌色，轻微呼吸 */
+.ctool-boot-logo {
+    width: 34px;
+    height: 34px;
+    color: var(--ctool-boot-primary);
+    fill: currentColor;
+    animation: ctool-boot-breath 1.8s ease-in-out infinite;
+}
+
+/* 内容区细进度条 */
+.ctool-boot-line {
+    position: relative;
+    width: 132px;
+    height: 2px;
+    border-radius: 2px;
+    background-color: var(--ctool-boot-chip);
+    overflow: hidden;
+}
+
+.ctool-boot-line::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 42%;
+    border-radius: inherit;
+    background-color: var(--ctool-boot-primary);
+    animation: ctool-boot-slide 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* 慢网兜底：12s 后提示还在加载（纯视觉，无文案，避免启动前拿不到语言设置） */
+.ctool-boot-slow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    height: 10px;
+    opacity: 0;
+    animation: ctool-boot-fadein 0.4s ease 12s forwards;
+}
+
+/* 30s 后给出重载入口，用 <a href=""> 实现，不需要 JS */
+.ctool-boot-retry {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--ctool-boot-border);
+    border-radius: 50%;
+    color: var(--ctool-boot-chip-strong);
+    opacity: 0;
+    animation: ctool-boot-fadein 0.4s ease 30s forwards;
+    transition: color 0.15s, border-color 0.15s;
+}
+
+.ctool-boot-retry:hover {
+    border-color: var(--ctool-boot-primary);
+    color: var(--ctool-boot-primary);
+}
+
+.ctool-boot-retry svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+@keyframes ctool-boot-slide {
+    0% {
+        left: -45%;
+    }
+    100% {
+        left: 100%;
+    }
+}
+
+@keyframes ctool-boot-breath {
+    0%, 100% {
+        opacity: 0.45;
+        transform: scale(0.94);
+    }
+    50% {
+        opacity: 0.9;
+        transform: scale(1);
+    }
+}
+
+@keyframes ctool-boot-fadein {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    .ctool-boot {
+        --ctool-boot-bg: #242424;
+        --ctool-boot-bar-bg: #333333;
+        --ctool-boot-border: #4c4d4f;
+        --ctool-boot-chip: #3a3a3a;
+        --ctool-boot-chip-strong: #474747;
+    }
+}
+
+/* 应用启动后会写 html[data-theme]，之后以用户的选择为准 */
+[data-theme="light"] .ctool-boot {
+    --ctool-boot-bg: #ffffff;
+    --ctool-boot-bar-bg: #f7f7f7;
+    --ctool-boot-border: #dcdfe6;
+    --ctool-boot-chip: #e9ebef;
+    --ctool-boot-chip-strong: #dfe2e7;
+}
+
+[data-theme="dark"] .ctool-boot {
+    --ctool-boot-bg: #242424;
+    --ctool-boot-bar-bg: #333333;
+    --ctool-boot-border: #4c4d4f;
+    --ctool-boot-chip: #3a3a3a;
+    --ctool-boot-chip-strong: #474747;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ctool-boot-logo,
+    .ctool-boot-tabs::after,
+    .ctool-boot-line::after {
+        animation: none;
+    }
+
+    /* 去掉滑动，保留一条静态进度段表示"仍在进行" */
+    .ctool-boot-tabs::after,
+    .ctool-boot-line::after {
+        left: 0;
+        width: 30%;
+    }
+
+    .ctool-boot--done {
+        transition: none;
+    }
+}

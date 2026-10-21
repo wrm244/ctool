@@ -8,16 +8,13 @@
             <ComplexBottom v-else />
         </div>
         <template #fallback>
-            <div class="ctool-skeleton">
-                <div class="ctool-skeleton-header" />
-                <div class="ctool-skeleton-content" />
-                <div class="ctool-skeleton-bottom" />
-            </div>
+            <Boot />
         </template>
     </Suspense>
 </template>
 
 <script setup lang="ts">
+import Boot from "@/block/Boot.vue";
 import Content from "@/block/Content.vue";
 import Message from "@/helper/message";
 
@@ -99,29 +96,5 @@ onUnmounted(() => {
     display: grid;
     grid-template-columns: 1fr;
     grid-template-rows: auto minmax(0px, 1fr) auto;
-}
-
-.ctool-skeleton {
-    height: 100vh;
-    display: grid;
-    grid-template-columns: 1fr;
-    grid-template-rows: auto minmax(0px, 1fr) auto;
-    background-color: var(--background-color);
-}
-
-.ctool-skeleton-header {
-    height: 33px;
-    background-color: var(--ctool-block-title-bg-color);
-    border-bottom: solid 1px var(--ctool-border-color);
-}
-
-.ctool-skeleton-content {
-    background-color: var(--background-color);
-}
-
-.ctool-skeleton-bottom {
-    height: 33px;
-    background-color: var(--ctool-block-title-bg-color);
-    border-top: solid 1px var(--ctool-border-color);
 }
 </style>
