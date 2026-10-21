@@ -19,7 +19,7 @@
 
 <script setup lang="ts">
 import {useRouter} from 'vue-router'
-import {onMounted} from 'vue'
+import {onMounted, onUnmounted} from 'vue'
 import {report} from '@/helper/stat'
 import {RouteMeta} from '@/types'
 import {categoryExists, getTool} from '@/config'
@@ -32,21 +32,31 @@ const router = useRouter()
 let pwaUpdate = $ref(false)
 let pwaUpdater = $ref<(() => void) | null>(null)
 let is = $ref(true)
+let openSetting = $ref(false)
+let serviceWorkerUpdateListener: ((event: Event) => void) | null = null
+
+const openSettingListener = () => {
+    openSetting = !openSetting
+}
 
 onMounted(() => {
     window.dispatchEvent(new Event('resize'));
     // pwa 更新检测事件
-    window.addEventListener('ctool_service_worker_update', (event: any) => {
+    serviceWorkerUpdateListener = (event: Event) => {
+        const updateEvent = event as CustomEvent<{update: () => void}>
         pwaUpdate = true
-        pwaUpdater = event.detail.update
-    })
+        pwaUpdater = updateEvent.detail.update
+    }
+    window.addEventListener('ctool_service_worker_update', serviceWorkerUpdateListener)
+    event.addListener('open_setting', openSettingListener)
 })
 
-// 打开设置页面
-let openSetting = $ref(false)
-
-event.addListener('open_setting', () => {
-    openSetting = !openSetting
+onUnmounted(() => {
+    if (serviceWorkerUpdateListener) {
+        window.removeEventListener('ctool_service_worker_update', serviceWorkerUpdateListener)
+        serviceWorkerUpdateListener = null
+    }
+    event.removeListener('open_setting', openSettingListener)
 })
 
 router.beforeResolve((to) => {

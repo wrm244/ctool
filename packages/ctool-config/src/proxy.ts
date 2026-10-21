@@ -4,17 +4,27 @@ const domains: string[] = [
     "armconverter.com"
 ]
 
+const normalizeHostname = (hostname: string) => hostname.toLowerCase().replace(/\.$/, "")
+
 export default {
     defaultProxyUrl: "https://ctool.dev/api/proxy",
     is(url: string) {
-        if (url !== "") {
-            for (let domain of domains) {
-                if (url.includes(domain)) {
-                    return true;
-                }
-            }
+        if (url === "") {
+            return false
         }
-        return false;
+        try {
+            const parsed = new URL(url)
+            if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+                return false
+            }
+            const hostname = normalizeHostname(parsed.hostname)
+            return domains.some(domain => {
+                const allowed = normalizeHostname(domain)
+                return hostname === allowed || hostname.endsWith(`.${allowed}`)
+            })
+        } catch {
+            return false
+        }
     },
     getDomains() {
         return domains

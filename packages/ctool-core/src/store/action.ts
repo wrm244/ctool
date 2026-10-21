@@ -10,7 +10,7 @@ import useSetting from "@/store/setting";
 import { MessageType } from "@/types";
 import dayjs from "dayjs";
 import { cloneDeep, debounce, isNumber, isObject, isString, merge, toNumber } from "lodash";
-import { reactive, toRaw } from "vue";
+import { onScopeDispose, reactive, toRaw } from "vue";
 import { useRoute } from "vue-router";
 
 type Success = {
@@ -105,7 +105,7 @@ export const initialize = async <T extends Record<string, any>>(
     const isTextInput = inputField && instanceOfInput(defaultItems[inputField]);
 
     // 默认输入搜索关键字处理
-    defaultItems = keywordItems ? merge(defaultItems, keywordItems) : defaultItems;
+    defaultItems = keywordItems ? merge({}, defaultItems, keywordItems) : defaultItems;
 
     let items = cloneDeep(defaultItems);
 
@@ -230,6 +230,11 @@ export const useAction = <T extends Record<string, any>>(input: InitializeReturn
         } catch (e) {
         }
     }, 500);
+
+    // 组件切页/卸载时立即提交尚未到期的历史记录，避免 500ms 内导航导致数据丢失。
+    onScopeDispose(() => {
+        historyPush.flush();
+    });
 
     // 保存历史数据
     const save = () => {

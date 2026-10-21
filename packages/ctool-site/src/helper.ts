@@ -19,8 +19,24 @@ const defaultLocale =
     browserLocale === "zh" || browserLocale.indexOf("zh-") === 0 || browserLocale.indexOf("zh_") === 0 ? "zh_CN" : "en";
 const secondLocale = defaultLocale === "zh_CN" ? "en" : "zh_CN";
 
+const defaultSetting = (): {e: number, v: {items: {locale: Locale, theme: ThemeType}}} => ({
+    e: 0,
+    v: {items: {locale: "_default", theme: "auto"}},
+});
+const parseStorage = (key: string): any | null => {
+    try {
+        return JSON.parse(localStorage.getItem(key) || "null");
+    } catch {
+        return null;
+    }
+};
+
 export const getSetting = (): { v: { items: { locale: Locale; theme: ThemeType } } } => {
-    return JSON.parse(localStorage.getItem(settingKey) || `{"e":0,"v":{"items":{"locale":"_default","theme":"auto"}}}`);
+    const value = parseStorage(settingKey);
+    if (value?.v?.items && typeof value.v.items === "object") {
+        return value;
+    }
+    return defaultSetting();
 };
 let settingInstance: any = undefined;
 export const useSetting = () => {
@@ -98,7 +114,7 @@ export const search = (input: string) => {
     let lists: FeatureInterface[] = [];
     if (input === "") {
         // 默认暂时
-        const recently: string[] = JSON.parse(localStorage.getItem(operateKey) || "{}")?.v?.items?.recently || [];
+        const recently: string[] = parseStorage(operateKey)?.v?.items?.recently || [];
 
         lists = [
             ...new Set([

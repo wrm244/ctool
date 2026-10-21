@@ -7,7 +7,8 @@ import useSetting from "@/store/setting";
 // 对外请求代理方法
 export const axios = () => {
     const storeSetting = useSetting();
-    const instance = _axios.create();
+    // 防止外部接口异常时请求无限挂起，并释放对应资源。
+    const instance = _axios.create({timeout: 30_000});
     instance.interceptors.request.use(config => {
         // 判断是否需要使用代理
         if (platform.runtime.webSecurity() && config.url && proxy.is(config.url)) {

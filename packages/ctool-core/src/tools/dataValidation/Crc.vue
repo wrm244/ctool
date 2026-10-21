@@ -23,7 +23,7 @@
 import {initialize, useAction} from "@/store/action";
 import {createTextInput} from "@/components/text";
 import {crc, result, crcTypeLists, CrcType} from "./util";
-import {watch} from "vue";
+import {onScopeDispose, watch} from "vue";
 import type Input from "@/components/text/input";
 
 const action = useAction(await initialize<{ input: Input, type: CrcType }>({
@@ -32,6 +32,7 @@ const action = useAction(await initialize<{ input: Input, type: CrcType }>({
 }, {paste: false}))
 let output = $ref<null | number>(null)
 let error = $ref('')
+let renderVersion = 0
 
 watch(() => {
     return {
@@ -39,6 +40,7 @@ watch(() => {
         type:action.current.type
     }
 }, async ({text,type}) => {
+    const version = ++renderVersion
     error = ""
     output = null
     if (text.isError()) {
@@ -49,12 +51,22 @@ watch(() => {
         return;
     }
     try {
-        output = await crc(text, type)
+        const value = await crc(text, type)
+        if (version !== renderVersion) {
+            return
+        }
+        output = value
         action.save()
     } catch (e) {
-        error = $error(e)
+        if (version === renderVersion) {
+            error = $error(e)
+        }
     }
 }, {immediate: true, deep: true})
+
+onScopeDispose(() => {
+    renderVersion++
+})
 
 const getResult = (type: string) => {
     if (error !== "") {

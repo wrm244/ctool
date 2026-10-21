@@ -19,7 +19,7 @@ type Option = {
     }
 }
 
-const defaultOption: Option = {
+const createDefaultOption = (): Option => ({
     text: {
         delimiter: ",\\n",
         is_add_quote: false
@@ -34,7 +34,7 @@ const defaultOption: Option = {
     xml: {
         attribute_prefix: "",
     }
-}
+})
 
 export default class Output implements OutputBase<SerializeOutputEncoderType>, HistorySerializable<Output> {
     public _: '_output_' = '_output_'
@@ -45,7 +45,7 @@ export default class Output implements OutputBase<SerializeOutputEncoderType>, H
 
     constructor(type: SerializeOutputEncoderType = 'json') {
         this.type = type;
-        this.option = defaultOption
+        this.option = createDefaultOption()
     }
 
     isSaveHistory() {

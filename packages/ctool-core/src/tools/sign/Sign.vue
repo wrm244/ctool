@@ -82,6 +82,11 @@ worker.onmessage = function (event) {
         return generateKeypairCallback(data.data.public_key, data.data.private_key)
     }
 }
+
+worker.onerror = function (event) {
+    generateKeypair.loading = false
+    throw new Error(event.message || 'sign worker error')
+}
 const workerPost = (method: string, data: any) => {
     let send = {method, data}
     console.log("main send", send)

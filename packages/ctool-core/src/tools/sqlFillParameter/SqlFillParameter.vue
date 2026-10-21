@@ -109,7 +109,7 @@ const fill = () => {
     let paramList = convertParam(action.current.params)
     // 按字读取SQL，将?做替换
     let tempSqlStr = action.current.input
-    let resultStr = '' // 替换后的字符串
+    const resultParts: string[] = []
     let paramIndex = 0 // 参数访问索引
     let tempParamStr = '' // 用于存放参数字符串
     for (let i = 0; i < tempSqlStr.length; i++) {
@@ -141,13 +141,13 @@ const fill = () => {
                     tempParamStr = param.value
             }
             // 字符拼接
-            resultStr += tempParamStr
+            resultParts.push(tempParamStr)
             paramIndex++
         } else { // 正常拼接
-            resultStr += c
+            resultParts.push(c)
         }
     }
-    return resultStr
+    return resultParts.join("")
 }
 
 /**

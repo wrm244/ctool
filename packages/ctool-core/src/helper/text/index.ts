@@ -49,10 +49,17 @@ class Text {
     static async fromBlob(item: Blob) {
         return new Promise<Text>(resolve => {
             const reader = new FileReader();
-            reader.readAsArrayBuffer(item);
+            const fail = () => resolve(Text.fromError('file read fail'));
             reader.onloadend = () => {
+                if (reader.error) {
+                    fail();
+                    return;
+                }
                 resolve(new Text(new Uint(new Uint8Array(reader.result as ArrayBuffer))));
             };
+            reader.onerror = fail;
+            reader.onabort = fail;
+            reader.readAsArrayBuffer(item);
         });
     }
 
@@ -71,8 +78,9 @@ class Text {
                 return;
             }
             const xhr = new XMLHttpRequest();
-            xhr.open("GET", url);
+            xhr.open("GET", parsedUrl.href);
             xhr.responseType = "blob";
+            xhr.timeout = 30_000;
             xhr.onload = async () => {
                 if (xhr.status >= 200 && xhr.status < 300) {
                     resolve(await Text.fromBlob(xhr.response));
@@ -82,6 +90,12 @@ class Text {
             };
             xhr.onerror = () => {
                 resolve(Text.fromError(`[${url}] load fail`));
+            };
+            xhr.ontimeout = () => {
+                resolve(Text.fromError(`[${url}] load timeout`));
+            };
+            xhr.onabort = () => {
+                resolve(Text.fromError(`[${url}] load aborted`));
             };
             xhr.send();
         });
@@ -96,15 +110,17 @@ class Text {
     }
 
     static fromHex(str: string, { preserve_line_breaks = false }: { preserve_line_breaks?: boolean } = {}): Text {
+        const normalized = str
+            .replaceAll(/\\x/g, '') // 兼容 Unicode Escape 格式
+            .replaceAll(/[ \t\f\v]/g, '') // 过滤空白字符
+            .replaceAll("\r", "")
+            .replaceAll("\n", preserve_line_breaks ? "0a" : "")
+            .trim();
+        if (normalized !== "" && (normalized.length % 2 !== 0 || /[^0-9a-f]/i.test(normalized))) {
+            throw new Error("Hex 输入格式错误")
+        }
         return Text.fromBuffer(
-            Buffer.from(
-                str
-                    .replaceAll(/\\x/g, '') // 兼容 Unicode Escape 格式
-                    .replaceAll(" ", "") // 过滤空格
-                    .replaceAll("\n", preserve_line_breaks ? "0a" : "") // 换行符处理
-                    .trim(),
-                "hex",
-            ),
+            Buffer.from(normalized, "hex"),
         );
     }
     static fromBuffer(item: Buffer): Text {
@@ -176,14 +192,18 @@ class Text {
     }
 
     toDown() {
-        let objectUrl = window.URL.createObjectURL(new Blob([this.uint.uint8Array.buffer as ArrayBuffer], { type: this.mime() }));
-        let aEle = document.createElement("a");
+        const bytes = new Uint8Array(this.uint.uint8Array);
+        const objectUrl = window.URL.createObjectURL(new Blob([bytes], { type: this.mime() }));
+        const aEle = document.createElement("a");
         // 清理文件名中的路径遍历字符，防止下载到非预期位置
         aEle.download = this.name().replace(/[\\/]/g, "_");
         aEle.href = objectUrl;
+        aEle.style.display = "none";
+        document.body.appendChild(aEle);
         aEle.click();
         aEle.remove();
-        window.URL.revokeObjectURL(objectUrl);
+        // 延迟释放，避免部分浏览器尚未开始下载就撤销 URL。
+        setTimeout(() => window.URL.revokeObjectURL(objectUrl), 0);
     }
 
     toDataUrl() {
@@ -201,7 +221,7 @@ class Text {
         if (this._extensionCache !== null) {
             return this._extensionCache;
         }
-        let temp = this.fileName.split(".")?.pop() || "";
+        let temp = (this.fileName.split(".")?.pop() || "").toLowerCase();
         if (temp) {
             this._extensionCache = `.${temp}`;
             return this._extensionCache;
@@ -228,7 +248,7 @@ class Text {
             return this._mimeCache;
         }
         if (this.fileName) {
-            const ext = this.fileName.split(".")?.pop() || "";
+            const ext = (this.fileName.split(".")?.pop() || "").toLowerCase();
             if (ext && extMimeList.has(ext)) {
                 this._mimeCache = extMimeList.get(ext) || "application/octet-stream";
                 return this._mimeCache;

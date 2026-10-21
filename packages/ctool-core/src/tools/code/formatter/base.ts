@@ -18,6 +18,12 @@ export default abstract class<T extends Languages> implements Format<T> {
         return this
     }
 
+    clone(): this {
+        const instance = Object.create(Object.getPrototypeOf(this)) as this
+        Object.assign(instance, this)
+        return instance
+    }
+
     set(code: string, option?: OptionMap[T]) {
         this.code = code;
         this.option = option;
@@ -33,9 +39,6 @@ export default abstract class<T extends Languages> implements Format<T> {
     }
 
     async format(type: "beautify" | "compress"): Promise<string> {
-        const result = type === "beautify" ? await this.beautify() : await this.compress()
-        return new Promise((resolve) => {
-            resolve(result)
-        })
+        return type === "beautify" ? this.beautify() : this.compress()
     }
 }

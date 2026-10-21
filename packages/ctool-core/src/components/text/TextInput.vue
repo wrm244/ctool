@@ -79,7 +79,7 @@
 
 <script setup lang="ts">
 import { TextInput, createTextInput } from "./index";
-import { nextTick, PropType, watch, toRaw, StyleValue } from "vue";
+import { nextTick, PropType, watch, toRaw, StyleValue, onScopeDispose } from "vue";
 import Text, { encodings } from "@/helper/text";
 import { TextInputUpload, textInputEncoderLists, TextInputEncoderType } from "@/types";
 import { debounce, isString } from "lodash";
@@ -135,42 +135,66 @@ const emit = defineEmits<{ (e: "update:modelValue", modelValue: TextInput): void
 
 let current = $ref(toRaw(props.modelValue));
 
+let transformVersion = 0;
+
 // 更新
-const transform = debounce(async () => {
-    if (current.value === "") {
-        return (current.text = Text.empty());
+const transform = debounce(async (version: number) => {
+    if (version !== transformVersion) {
+        return;
+    }
+    const value = current.value;
+    const type = current.type;
+    const commit = (text: Text) => {
+        if (version === transformVersion && current.type === type && current.value === value) {
+            current.text = text;
+        }
+    }
+
+    if (value === "") {
+        commit(Text.empty());
+        return;
     }
     try {
-        if (current.type === "upload") {
-            if (current.value instanceof File) {
-                current.text = (await Text.fromBlob(current.value)).setFileName(current.value.name);
-                await current.text.calculateImageSize();
+        if (type === "upload") {
+            if (value instanceof File) {
+                const text = (await Text.fromBlob(value)).setFileName(value.name);
+                await text.calculateImageSize();
+                commit(text);
                 return;
             }
             throw new Error("error data");
         }
 
-        if (!isString(current.value)) {
+        if (!isString(value)) {
             throw new Error("error data");
         }
 
-        switch (current.type) {
+        switch (type) {
             case "text":
-                return (current.text = Text.fromString(current.value, current.option.text.encoding));
+                commit(Text.fromString(value, current.option.text.encoding));
+                return;
             case "base64":
-                return (current.text = Text.fromBase64(current.value));
+                commit(Text.fromBase64(value));
+                return;
             case "hex":
-                return (current.text = Text.fromHex(current.value, {
+                commit(Text.fromHex(value, {
                     preserve_line_breaks: current.option.hex.preserve_line_breaks,
                 }));
+                return;
             case "url":
-                return (current.text = await Text.fromUrl(current.value));
+                commit(await Text.fromUrl(value));
+                return;
         }
         throw new Error("error type");
     } catch (e) {
-        return (current.text = Text.fromError($error(e)));
+        commit(Text.fromError($error(e)));
     }
 }, 200);
+
+onScopeDispose(() => {
+    transformVersion++;
+    transform.cancel();
+});
 
 watch(
     () => {
@@ -181,7 +205,8 @@ watch(
         };
     },
     () => {
-        transform();
+        transformVersion++;
+        transform(transformVersion);
     },
     { immediate: true, deep: true },
 );

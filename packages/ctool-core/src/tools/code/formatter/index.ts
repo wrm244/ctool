@@ -125,8 +125,8 @@ const allLanguageType = Object.keys(languages).sort()
 
 const load = async <T extends Languages>(name: T): Promise<Format<T>> => {
     const handle = await languages[name].load()
-    handle.setName(name)
-    return handle
+    // formatter 模块导出的是单例，克隆后再写入状态，避免并发格式化互相覆盖。
+    return handle.clone().setName(name)
 }
 
 const getLanguageKey = (land: string) => {

@@ -109,7 +109,11 @@ const connect = () => {
     action.save()
     log($t('websocket_connect_start', [action.current.input]))
     try {
-        let websocket = new WebSocket(action.current.input, action.current.protocols !== '' ? action.current.protocols.split(',') : undefined);
+        const protocols = action.current.protocols
+            .split(',')
+            .map(item => item.trim())
+            .filter(item => item !== '')
+        const websocket = new WebSocket(action.current.input, protocols.length > 0 ? protocols : undefined);
         websocket.addEventListener('open', () => {
             state.status = "open";
             resetRetry()
@@ -142,6 +146,8 @@ const connect = () => {
         })
         state.ws = websocket;
     } catch (e) {
+        state.status = "close"
+        state.ws = null
         log($error(e))
     }
 }

@@ -15,7 +15,7 @@ type Option = {
     }
 }
 
-const defaultOption: Option = {
+const createDefaultOption = (): Option => ({
     base64: {is_url_safe: false, data_url_show: false},
     hex: {
         type: "hex",
@@ -26,7 +26,7 @@ const defaultOption: Option = {
     text: {
         encoding: "analyse"
     }
-}
+})
 
 export default class Output implements OutputBase<TextOutputEncoderType>, HistorySerializable<Output> {
     public _: '_output_' = '_output_'
@@ -36,7 +36,7 @@ export default class Output implements OutputBase<TextOutputEncoderType>, Histor
 
     constructor(type: TextOutputEncoderType = 'text') {
         this.type = type;
-        this.option = defaultOption;
+        this.option = createDefaultOption();
     }
 
     isSaveHistory() {

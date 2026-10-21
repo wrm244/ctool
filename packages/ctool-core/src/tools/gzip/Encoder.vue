@@ -46,9 +46,6 @@ const output = $computed(() => {
     }
     try {
 
-        if (!action.current.input.text.isText()) {
-            throw new Error("input content must text / text file")
-        }
         let result:Text
         if (action.current.deflate) {
             result = Text.fromUint8Array(deflate(action.current.input.text.toUint8Array()))
@@ -56,7 +53,7 @@ const output = $computed(() => {
         else {
             result = Text.fromUint8Array(gzip(action.current.input.text.toUint8Array()))
         }
-        result.setExtension('.gz')
+        result.setExtension(action.current.deflate ? '.deflate' : '.gz')
         return result;
     } catch (e) {
         return Text.fromError($error(e))

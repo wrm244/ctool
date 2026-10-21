@@ -1,5 +1,5 @@
 import platform from "./platform";
-import { onUnmounted, ref } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
 
 // 剪贴板权限
 let permission: PermissionState = "denied";
@@ -119,14 +119,44 @@ export const copyImage = (imageBase64: string, successCallback?: () => void) => 
 };
 
 export const useClipboardPermission = () => {
-    let state = ref(permission);
-    const timer = setInterval(async () => {
-        await initPermission();
+    const state = ref(permission);
+    let status: PermissionStatus | null = null;
+    let disposed = false;
+
+    const update = () => {
+        if (status) {
+            permission = status.state;
+        }
         state.value = permission;
-        console.log(`clipboard permission check ${state.value}`);
-    }, 500);
+    };
+
+    onMounted(async () => {
+        if (platform.isUtools() || platform.isDesktop()) {
+            permission = "granted";
+            state.value = permission;
+            return;
+        }
+        if (!navigator.permissions || !navigator.permissions.query) {
+            return;
+        }
+        try {
+            // @ts-ignore clipboard-read 尚未包含在部分 TypeScript DOM 定义中
+            status = await navigator.permissions.query({name: "clipboard-read"});
+            if (disposed) {
+                status = null;
+                return;
+            }
+            update();
+            status.addEventListener("change", update);
+        } catch {
+            state.value = permission;
+        }
+    });
+
     onUnmounted(() => {
-        clearInterval(timer);
+        disposed = true;
+        status?.removeEventListener("change", update);
+        status = null;
     });
     return { state };
 };

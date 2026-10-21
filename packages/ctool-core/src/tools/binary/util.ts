@@ -6,13 +6,6 @@ export const lengthLists = [2 ** 3, 2 ** 4, 2 ** 5, 2 ** 6, 2 ** 7, 2 ** 8, 2 **
 
 export type GenerateType = "trueForm" | "inverse" | "complement"
 
-const toFixed = (d = '', length = 32, symbol = 0) => {
-    if (d.length < length) {
-        return symbol + '0'.repeat(length - 1 - d.length) + d;
-    }
-    return d;
-}
-
 class Transform {
     private readonly input: string;
     private readonly length: number;
@@ -38,7 +31,9 @@ class Transform {
     }
 
     number() {
-        return BigInt(`${this.isNegative() ? `-` : ``}${this.getNumberString()}`)
+        const value = BigInt(`${this.isNegative() ? `-` : ``}${this.getNumberString()}`)
+        // 统一处理 +0/-0，避免 -0 被编码成负数形式。
+        return value === 0n ? 0n : value
     }
 
     check() {
@@ -55,40 +50,29 @@ class Transform {
     }
 
     trueForm() {
-        const two = (this.isNegative() ? -1n * this.number() : this.number()).toString(2);
-        if (!this.isNegative()) {
-            return toFixed(two, this.length, 0);
+        const number = this.number()
+        const two = (number < 0n ? -number : number).toString(2)
+        if (number >= 0n) {
+            return two.padStart(this.length, '0')
         }
-        return toFixed(two, this.length, 1);
+        return '1' + two.padStart(this.length - 1, '0')
     }
 
     inverse() {
         const trueForm = this.trueForm();
-        if (!this.isNegative()) {
+        if (this.number() >= 0n) {
             return trueForm;
         }
-        let data = '';
-        for (let index = 0; index < this.length; index++) {
-            const item = trueForm[index];
-            if (index === 0) {
-                data += item;
-            } else {
-                data += Math.abs(parseInt(item) - 1);
-            }
-        }
-        return data;
+        return trueForm[0] + trueForm.slice(1).replace(/[01]/g, item => item === '0' ? '1' : '0')
     }
 
     complement() {
-        const trueForm = this.trueForm();
-        if (!this.isNegative()) {
-            return trueForm;
+        const number = this.number()
+        if (number >= 0n) {
+            return number.toString(2).padStart(this.length, '0')
         }
-        return toFixed(
-            (BigInt(`0b${this.inverse()}`) + 1n).toString(2),
-            this.length,
-            1
-        );
+        const bits = BigInt(this.length)
+        return ((1n << bits) - (-number)).toString(2).padStart(this.length, '0')
     }
 }
 

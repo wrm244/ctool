@@ -71,6 +71,12 @@ worker.onmessage = function (event) {
     }
 }
 
+worker.onerror = function (event) {
+    generateLoading = false
+    checkLoading = false
+    throw new Error(event.message || 'bcrypt worker error')
+}
+
 const workerPost = (method: string, data: any) => {
     let send = { method, data }
     console.log("main send", send)
@@ -81,8 +87,8 @@ const generate = () => {
     if (action.current.input === "") {
         return;
     }
-    if (action.current.rounds < 4 || action.current.rounds > 30) {
-        throw new Error($t('bcrypt_rounds_range', [4, 30]))
+    if (action.current.rounds < 4 || action.current.rounds > 31) {
+        throw new Error($t('bcrypt_rounds_range', [4, 31]))
     }
     generateLoading = true
     workerPost('hash', { input: action.current.input, rounds: action.current.rounds, version: action.current.version })
@@ -106,8 +112,11 @@ const check = () => {
     workerPost('compare', { input: action.current.input, hash: action.current.hash })
 }
 
-const checkCallback = (_err: Error, res: boolean) => {
+const checkCallback = (err: Error, res: boolean) => {
     checkLoading = false
+    if (err) {
+        throw new Error(err.message)
+    }
     action.current.check_result = res
     const result = (action.current.check_result ? $t(`bcrypt_check_result_success`) : $t('bcrypt_check_result_error'))
     action.success({
@@ -116,7 +125,7 @@ const checkCallback = (_err: Error, res: boolean) => {
     })
 }
 
-const rounds = range(4, 33).map((r) => {
+const rounds = range(4, 32).map((r) => {
     return { label: `${$t('bcrypt_rounds')} ${r}`, value: r }
 });
 

@@ -6,33 +6,29 @@ export const methods = ["md5", "sha1", "sha256", "sha512", "sm3", "ripemd160"] a
 
 export type methodType = typeof methods[number]
 
+const toWordArray = (message: Text) => CryptoJS.lib.WordArray.create(message.toUint8Array())
+
 const hmacMethod = {
     md5: (message: Text, secret: Text): string => {
-        return CryptoJS.HmacMD5(CryptoJS.enc.Base64.parse(message.toBase64()), CryptoJS.enc.Base64.parse(secret.toBase64())).toString();
+        return CryptoJS.HmacMD5(toWordArray(message), toWordArray(secret)).toString();
     },
     sha1: (message: Text, secret: Text): string => {
-        return CryptoJS.HmacSHA1(CryptoJS.enc.Base64.parse(message.toBase64()), CryptoJS.enc.Base64.parse(secret.toBase64())).toString();
+        return CryptoJS.HmacSHA1(toWordArray(message), toWordArray(secret)).toString();
     },
     sha256: (message: Text, secret: Text): string => {
-        return CryptoJS.HmacSHA256(CryptoJS.enc.Base64.parse(message.toBase64()), CryptoJS.enc.Base64.parse(secret.toBase64())).toString();
+        return CryptoJS.HmacSHA256(toWordArray(message), toWordArray(secret)).toString();
     },
     sha512: (message: Text, secret: Text): string => {
-        return CryptoJS.HmacSHA512(CryptoJS.enc.Base64.parse(message.toBase64()), CryptoJS.enc.Base64.parse(secret.toBase64())).toString();
+        return CryptoJS.HmacSHA512(toWordArray(message), toWordArray(secret)).toString();
     },
     sm3: (message: Text, secret: Text): string => {
-        const leftPad = (input: string, num: number) => {
-            if (input.length >= num) return input;
-
-            return (new Array(num - input.length + 1)).join("0") + input;
-        };
-
         let hexStr = message.toHexString();
 
         const words: number[] = [];
         let hexStrLength = hexStr.length;
 
         if (hexStrLength % 2 !== 0) {
-            hexStr = leftPad(hexStr, hexStrLength + 1);
+            hexStr = hexStr.padStart(hexStrLength + 1, "0");
         }
 
         hexStrLength = hexStr.length;
@@ -44,7 +40,7 @@ const hmacMethod = {
         return sm.sm3(words as any, { key: secret.toHexString() });
     },
     ripemd160: (message: Text, secret: Text): string => {
-        return CryptoJS.HmacRIPEMD160(CryptoJS.enc.Base64.parse(message.toBase64()), CryptoJS.enc.Base64.parse(secret.toBase64())).toString();
+        return CryptoJS.HmacRIPEMD160(toWordArray(message), toWordArray(secret)).toString();
     },
 };
 

@@ -26,7 +26,7 @@
 
 <script lang="ts" setup>
 import Editor from "@/components/editor/Editor.vue";
-import {PropType, watch} from "vue"
+import {onScopeDispose, PropType, watch} from "vue"
 import Serialize from "@/helper/serialize"
 import {getDisplayName} from "@/helper/code";
 import {transform, Option} from "./index";
@@ -52,6 +52,7 @@ const current: Option = $computed({
 })
 
 let output = $ref("")
+let renderVersion = 0
 const lang = $computed(() => {
     return current.lang
 })
@@ -65,6 +66,7 @@ watch(() => {
         options: current.option
     }
 }, async ({lang, json, options}) => {
+    const version = ++renderVersion
     if (json.isError()) {
         output = json.error();
         return;
@@ -73,9 +75,23 @@ watch(() => {
         output = "";
         return;
     }
-    output = await transform(lang, json.toJson(), options[lang])
-    emit('success')
+    try {
+        const result = await transform(lang, json.toJson(), options[lang])
+        if (version !== renderVersion) {
+            return
+        }
+        output = result
+        emit('success')
+    } catch (e) {
+        if (version === renderVersion) {
+            output = $error(e)
+        }
+    }
 }, {immediate: true, deep: true})
+
+onScopeDispose(() => {
+    renderVersion++
+})
 
 </script>
 

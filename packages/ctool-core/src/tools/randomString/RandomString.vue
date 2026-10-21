@@ -17,8 +17,8 @@
                         </Button>
                     </template>
                 </Input>
-                <InputNumber v-model="action.current.length" :width="100" :label="$t('randomString_length')"/>
-                <InputNumber v-model="action.current.amount" :width="100" :label="$t('randomString_amount')"/>
+                <InputNumber v-model="action.current.length" :width="100" :min="1" :max="1000" :label="$t('randomString_length')"/>
+                <InputNumber v-model="action.current.amount" :width="100" :min="1" :max="1000" :label="$t('randomString_amount')"/>
                 <Button @click="generate">
                     <Icon name="refresh"/>
                 </Button>
@@ -71,18 +71,48 @@ const action = useAction(await initialize<{
 
 let baseSetting = $ref<{ base: string, show: boolean }>({base: action.current.base, show: false})
 
-const generate = () => {
-    let chars = `${action.current.base}`;
-    let randomStringLists: string[] = [];
-    for (let i = 0, l = action.current.amount; i < l; i++) {
-        let _chars = chars.split(""),
-            randomString = "";
-        for (let j = 0, k = action.current.length; j < k; j++) {
-            if (_chars.length < 1) break;
-            let index = Math.floor(Math.random() * _chars.length);
-            randomString += _chars[index];
+const createSecureRandomIndex = () => {
+    const buffer = new Uint32Array(256)
+    let offset = buffer.length
+    const nextUint32 = () => {
+        if (offset >= buffer.length) {
+            crypto.getRandomValues(buffer)
+            offset = 0
         }
-        randomStringLists.push(randomString);
+        return buffer[offset++]
+    }
+    return (max: number) => {
+        if (max < 1) {
+            return 0
+        }
+        // 拒绝采样，避免直接取模带来的字符分布偏差。
+        const limit = 2 ** 32 - (2 ** 32 % max)
+        let value: number
+        do {
+            value = nextUint32()
+        } while (value >= limit)
+        return value % max
+    }
+}
+
+const generate = () => {
+    const chars = Array.from(`${action.current.base}`);
+    const rawAmount = Math.floor(action.current.amount);
+    const rawLength = Math.floor(action.current.length);
+    const amount = Number.isFinite(rawAmount) ? Math.min(1000, Math.max(1, rawAmount)) : 1;
+    const length = Number.isFinite(rawLength) ? Math.min(1000, Math.max(1, rawLength)) : 1;
+    const randomIndex = createSecureRandomIndex();
+    const randomStringLists: string[] = [];
+    for (let i = 0; i < amount; i++) {
+        if (chars.length < 1) {
+            randomStringLists.push("");
+            continue;
+        }
+        const parts = new Array<string>(length);
+        for (let j = 0; j < length; j++) {
+            parts[j] = chars[randomIndex(chars.length)];
+        }
+        randomStringLists.push(parts.join(""));
     }
     action.current.result = randomStringLists;
 }

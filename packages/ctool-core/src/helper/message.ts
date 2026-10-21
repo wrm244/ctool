@@ -1,6 +1,5 @@
 import {MessageType, MessageOption, MessageMethod} from '@/types'
 import {h, render, VNode} from 'vue'
-import {sum} from 'lodash'
 import Message from '@/components/Message.vue'
 
 const containers = new Map<HTMLElement, {
@@ -12,6 +11,8 @@ const containers = new Map<HTMLElement, {
         duration: number,
     }
 }>();
+const destroying = new WeakSet<HTMLElement>();
+const durationTimers = new Map<HTMLElement, ReturnType<typeof setTimeout>>();
 
 // 缓存消息挂载容器，避免每次 open 都查询 DOM
 let appendContainer: HTMLElement | null = null;
@@ -26,14 +27,20 @@ const getAppendContainer = (): HTMLElement | null => {
 const containerHeights = new WeakMap<HTMLElement, number>();
 
 const closeAll = () => {
-    for (let instance of containers.keys()) {
+    for (let instance of Array.from(containers.keys())) {
         destroy(instance)
     }
 }
 
 const destroy = (container: HTMLElement) => {
-    if (!containers.has(container)) {
+    if (!containers.has(container) || destroying.has(container)) {
         return;
+    }
+    destroying.add(container);
+    const durationTimer = durationTimers.get(container);
+    if (durationTimer) {
+        clearTimeout(durationTimer);
+        durationTimers.delete(container);
     }
     // 关闭
     (containers.get(container)?.vNode as VNode).component?.exposed?.exposeClose();
@@ -45,6 +52,7 @@ const destroy = (container: HTMLElement) => {
         container.remove()
         containers.delete(container)
         containerHeights.delete(container);
+        durationTimers.delete(container);
     }, 300)
 }
 
@@ -57,18 +65,16 @@ const open = (type: MessageType, info: string, {offset = 16, duration = 3000}: M
     }
     parent.appendChild(container)
 
-    // 计算总偏移：复用缓存高度，避免重复 querySelector
-    const totalOffset = sum([
-        ...Array.from(containers.entries()).map(([el, item]) => {
-            let height = containerHeights.get(el);
-            if (height === undefined) {
-                height = el.querySelector(".ctool-message")?.clientHeight || 0;
-                containerHeights.set(el, height);
-            }
-            return item.attr.offset + height;
-        }),
-        offset,
-    ]);
+    // 计算总偏移：累加所有已存在消息的高度与间距。
+    let totalOffset = offset;
+    for (const [el, item] of containers.entries()) {
+        let height = containerHeights.get(el);
+        if (height === undefined) {
+            height = el.querySelector(".ctool-message")?.clientHeight || 0;
+            containerHeights.set(el, height);
+        }
+        totalOffset += item.attr.offset + height;
+    }
 
     const instance = h(
         Message,
@@ -99,9 +105,10 @@ const open = (type: MessageType, info: string, {offset = 16, duration = 3000}: M
     })
     // 延迟关闭
     if (duration > 0) {
-        setTimeout(() => {
+        durationTimers.set(container, setTimeout(() => {
+            durationTimers.delete(container);
             destroy(container)
-        }, duration)
+        }, duration))
     }
 }
 

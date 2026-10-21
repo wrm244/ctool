@@ -19,11 +19,11 @@ const getMapValue = (items: string[] | string, split: string) => {
         items = items.split(";").map(item => item.trim())
     }
     items.forEach(item => {
-        const temp = item.split(split).map(value => value.trim())
-        if (temp.length > 1) {
+        const index = item.indexOf(split)
+        if (index > 0) {
             lists.push({
-                name: temp[0],
-                value: temp[1]
+                name: item.slice(0, index).trim(),
+                value: item.slice(index + split.length).trim()
             })
         }
     })

@@ -62,7 +62,14 @@ const handleUpload = () => {
     if (!fileInput || !fileInput.files) {
         return;
     }
-    success(fileInput.files[0])
+    const file = fileInput.files[0]
+    if (!file || (props.type === "image" && !file.type.startsWith("image/"))) {
+        fileInput.value = ""
+        return false
+    }
+    success(file)
+    // 允许用户连续选择同一个文件时再次触发 change。
+    fileInput.value = ""
     return false
 }
 const paste = (_event: Event) => {

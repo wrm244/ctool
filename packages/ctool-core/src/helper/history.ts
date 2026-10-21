@@ -15,7 +15,7 @@ const HISTORY_MAX_SIZE: number = 200 * 1024
 class History<T = any> {
     lists: HistoryItemStructure<T>[] = []
     name: string
-    static instance: Record<string, History> = {};
+    static instance: Record<string, History> = Object.create(null);
 
     static itemFactory<T>(item: T): HistoryItemStructure<T> {
         return {
@@ -37,7 +37,8 @@ class History<T = any> {
 
     constructor(name: string) {
         this.name = name
-        this.lists = storage.get<HistoryItemStructure<T>[]>(this.cacheName(), [], true) || []
+        const lists = storage.get<HistoryItemStructure<T>[]>(this.cacheName(), [], true)
+        this.lists = Array.isArray(lists) ? lists : []
     }
 
     cacheName() {

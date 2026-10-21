@@ -77,28 +77,36 @@ const useSetting = defineStore('setting', () => {
 
     // 系统主题变化监听器引用，用于卸载时清理
     let systemThemeListener: (() => void) | null = null
+    let systemThemeMedia: MediaQueryList | null = null
+    let localeChangeListener: (() => void) | null = null
 
     onMounted(() => {
-        event.addListener('locale_change', async () => {
+        localeChangeListener = async () => {
             await nextTick()
             // 语言变化重新计算窗口尺寸
             window.dispatchEvent(new Event('resize'));
-        })
+        }
+        event.addListener('locale_change', localeChangeListener)
         // 初始化语言
         setCurrentLocale(items.locale)
         // 监控系统主题变化
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+        systemThemeMedia = window.matchMedia('(prefers-color-scheme: dark)')
         systemThemeListener = () => {
             items.theme === 'auto' && event.dispatch('theme_change', 'system change')
         }
-        mediaQuery.addEventListener('change', systemThemeListener)
+        systemThemeMedia.addEventListener('change', systemThemeListener)
     })
 
     onUnmounted(() => {
+        if (localeChangeListener) {
+            event.removeListener('locale_change', localeChangeListener)
+            localeChangeListener = null
+        }
         // 清理系统主题监听器，防止内存泄漏
-        if (systemThemeListener) {
-            window.matchMedia('(prefers-color-scheme: dark)').removeEventListener('change', systemThemeListener)
+        if (systemThemeMedia && systemThemeListener) {
+            systemThemeMedia.removeEventListener('change', systemThemeListener)
             systemThemeListener = null
+            systemThemeMedia = null
         }
     })
 

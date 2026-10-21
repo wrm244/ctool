@@ -49,7 +49,7 @@
 
 <script setup lang="ts">
 import {SerializeOutput, createSerializeOutput} from "./index"
-import {defineAsyncComponent, nextTick, PropType, StyleValue, watch} from "vue"
+import {defineAsyncComponent, nextTick, PropType, StyleValue, watch, onScopeDispose} from "vue"
 import {serializeOutputEncoderLists, SerializeOutputEncoderType} from "@/types"
 import Serialize from "@/helper/serialize"
 import formatter from "@/tools/code/formatter";
@@ -107,6 +107,7 @@ const getPlaceholder = $computed(() => {
 const success = () => emit("success")
 
 let result = $ref("")
+let renderVersion = 0
 
 watch(() => {
     return {
@@ -115,7 +116,11 @@ watch(() => {
         option: current.option
     }
 }, async ({data, type, option}) => {
+    const version = ++renderVersion
     await nextTick()
+    if (version !== renderVersion) {
+        return
+    }
     result = ""
     if (data.isError()) {
         result = data.error()
@@ -163,14 +168,24 @@ watch(() => {
         }
 
         if (r !== "") {
+            const formatted = await formatter.simple(type, 'beautify', r)
+            if (version !== renderVersion) {
+                return
+            }
             success()
-            result = await formatter.simple(current.type, 'beautify', r)
+            result = formatted
         }
     } catch (e) {
-        console.error(e)
-        result = $error(e)
+        if (version === renderVersion) {
+            console.error(e)
+            result = $error(e)
+        }
     }
 }, {immediate: true, deep: true})
+
+onScopeDispose(() => {
+    renderVersion++
+})
 
 const style = $computed(() => {
     let css: StyleValue = {}

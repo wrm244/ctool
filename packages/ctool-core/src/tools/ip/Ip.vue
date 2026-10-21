@@ -52,7 +52,8 @@ const query = () => {
     isLoading = true
     axios({
         url: 'https://get.geojs.io/v1/ip/geo.json',
-        params: action.current.input !== "localhost" ? {ip: action.current.input} : {}
+        params: action.current.input !== "localhost" ? {ip: action.current.input} : {},
+        timeout: 30_000,
     }).then(({data}) => {
         action.current.result = isArray(data) && data.length < 2 ? data[0] : data
         action.save()

@@ -81,6 +81,7 @@ const props = defineProps({
 const storeTheme = useTheme();
 const container = ref<HTMLElement | null>(null);
 const editorView = shallowRef<monacoEditor.editor.IStandaloneCodeEditor | null>(null);
+let ownedModel: monacoEditor.editor.ITextModel | null = null;
 const lineWrapping = ref(!props.disableLineWrapping);
 const lineNumbers = ref(!props.disableLineNumbers);
 // 组件是否已卸载：避免 monacoInit 异步完成后再创建编辑器造成实例泄漏
@@ -113,9 +114,7 @@ const updateEditorConfig = async () => {
 };
 
 const create = async (element: HTMLElement) => {
-    if (editorView.value) {
-        editorView.value.dispose();
-    }
+    disposeEditor();
     monacoInit({
         "vs/nls": { availableLanguages: { "*": $t("main_locale") === "zh_CN" ? "zh-cn" : "en" } },
     }).then(monaco => {
@@ -123,14 +122,18 @@ const create = async (element: HTMLElement) => {
         if (disposed) {
             return;
         }
+        const model = monaco.editor.createModel(
+            unref(modelValue.value),
+            getLanguage(props.lang).id,
+        );
+        ownedModel = model;
         const editor = monaco.editor.create(element, {
-            value: unref(modelValue.value),
+            model,
             minimap: {
                 enabled: false,
             },
             lineNumbers: lineNumbers.value ? "on" : "off",
             wordWrap: lineWrapping.value ? "on" : "off",
-            language: getLanguage(props.lang).id,
             scrollbar: {
                 verticalScrollbarSize: 5,
             },
@@ -173,7 +176,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
     disposed = true;
-    editorView.value?.dispose();
+    disposeEditor();
     // 清理未完成的回写定时器，防止内存泄漏
     if (pendingValueTimer) {
         clearInterval(pendingValueTimer);
@@ -185,6 +188,15 @@ onUnmounted(() => {
         clearContentListener = null;
     }
 });
+
+const disposeEditor = () => {
+    editorView.value?.dispose();
+    editorView.value = null;
+    if (ownedModel && !ownedModel.isDisposed()) {
+        ownedModel.dispose();
+    }
+    ownedModel = null;
+};
 
 // content_clear 事件监听器引用，用于卸载时移除防止内存泄漏
 let clearContentListener: (() => void) | null = null;

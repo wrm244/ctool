@@ -27,6 +27,8 @@ export type Languages = keyof OptionMap
 export interface Format<T extends Languages> {
     format(type: "beautify" | "compress"): Promise<string>;
 
+    clone(): Format<T>;
+
     setName(value: T): Format<T>;
 
     set(code: string, option?: OptionMap[T]): Format<T>;

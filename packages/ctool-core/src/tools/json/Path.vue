@@ -22,7 +22,7 @@
 import Editor from "@/components/editor/Editor.vue";
 import {JSONPath} from "jsonpath-plus";
 import jmespath from "jmespath";
-import {PropType, watch} from "vue";
+import {onScopeDispose, PropType, watch} from "vue";
 import {isObject} from "lodash";
 import {PathOptionType} from "./define";
 import formatter from "../code/formatter";
@@ -58,6 +58,7 @@ const option: PathOptionType = $computed({
 })
 
 let output = $ref("")
+let renderVersion = 0
 
 watch(() => {
     return {
@@ -65,6 +66,7 @@ watch(() => {
         option
     }
 }, async ({json, option}) => {
+    const version = ++renderVersion
     if (json.isError()) {
         output = json.error();
         return;
@@ -79,29 +81,49 @@ watch(() => {
         if (option.type === "json_path" && jsonPathExp !== "") {
             const result = JSONPath({path: jsonPathExp, json: json.content()})
             if (isObject(result)) {
-                output = await formatter.simple('json', 'beautify', result)
+                const formatted = await formatter.simple('json', 'beautify', result)
+                if (version === renderVersion) {
+                    output = formatted
+                }
             } else {
-                output = result.toString()
+                if (version === renderVersion) {
+                    output = result == null ? String(result) : result.toString()
+                }
             }
-            emit('success')
+            if (version === renderVersion) {
+                emit('success')
+            }
             return
         }
         if (option.type === "jmes_path" && jmesPathExp !== "") {
             const result = jmespath.search(json.content(), jmesPathExp)
             if (isObject(result)) {
-                output = await formatter.simple('json', 'beautify', result)
+                const formatted = await formatter.simple('json', 'beautify', result)
+                if (version === renderVersion) {
+                    output = formatted
+                }
             } else {
-                output = result.toString()
+                if (version === renderVersion) {
+                    output = result == null ? String(result) : result.toString()
+                }
             }
-            emit('success')
+            if (version === renderVersion) {
+                emit('success')
+            }
             return
         }
     } catch (e) {
-        output = $error(e)
+        if (version === renderVersion) {
+            output = $error(e)
+        }
         return
     }
     output = ""
 }, {immediate: true, deep: true})
+
+onScopeDispose(() => {
+    renderVersion++
+})
 
 let editorHeight = $ref(100)
 const resize = (height) => {

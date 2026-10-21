@@ -60,8 +60,9 @@ const menuDefinition = (): {
                 if (!formatter.isEnable(lang, "beautify") || ed.getValue() === "") {
                     return;
                 }
-                const result = await formatter.simple(lang, "beautify", ed.getValue());
-                if (result !== ed.getValue()) {
+                const originalValue = ed.getValue();
+                const result = await formatter.simple(lang, "beautify", originalValue);
+                if (!(ed as any)._isDisposed && ed.getValue() === originalValue && result !== originalValue) {
                     ed.setValue(result);
                 }
             },
@@ -75,8 +76,9 @@ const menuDefinition = (): {
                 if (!formatter.isEnable(lang, "compress") || ed.getValue() === "") {
                     return;
                 }
-                const result = await formatter.simple(lang, "compress", ed.getValue());
-                if (result !== ed.getValue()) {
+                const originalValue = ed.getValue();
+                const result = await formatter.simple(lang, "compress", originalValue);
+                if (!(ed as any)._isDisposed && ed.getValue() === originalValue && result !== originalValue) {
                     ed.setValue(result);
                 }
             },

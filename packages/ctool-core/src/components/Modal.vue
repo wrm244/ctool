@@ -75,15 +75,38 @@ const clickClose = (event: MouseEvent) => {
     }
 }
 
+let openTimer: ReturnType<typeof setTimeout> | null = null
+let closeTimer: ReturnType<typeof setTimeout> | null = null
+let disposed = false
+
+const clearOpenTimer = () => {
+    if (openTimer) {
+        clearTimeout(openTimer)
+        openTimer = null
+    }
+}
+
+const clearCloseTimer = () => {
+    if (closeTimer) {
+        clearTimeout(closeTimer)
+        closeTimer = null
+    }
+}
+
 const open = () => {
     if (!container) {
         return;
     }
-    container.show()
+    clearCloseTimer()
+    if (!container.open) {
+        container.show()
+    }
     // 延迟注册点击外部关闭：动画结束后再监听，避免动画期间误触发
-    setTimeout(() => {
+    clearOpenTimer()
+    openTimer = setTimeout(() => {
+        openTimer = null
         // 仅在仍处于打开状态时注册，避免关闭后残留监听器
-        if (container && show) {
+        if (!disposed && container?.open && show) {
             document.addEventListener('click', clickClose)
         }
     }, 300)
@@ -99,11 +122,19 @@ const close = () => {
     if (!container) {
         return;
     }
-    setTimeout(() => {
-        container && container.close()
+    clearOpenTimer()
+    document.removeEventListener('click', clickClose);
+    if (!container.open || closeTimer) {
+        return
+    }
+    closeTimer = setTimeout(() => {
+        closeTimer = null
+        if (disposed || !container?.open) {
+            return
+        }
+        container.close()
         emit('close')
     }, 300)
-    document.removeEventListener('click', clickClose);
 }
 
 const update = () => {
@@ -111,7 +142,7 @@ const update = () => {
 }
 watch(() => show, () => update())
 const handleEscape = (event: KeyboardEvent) => {
-    if (event.key === 'Escape') {
+    if (event.key === 'Escape' && show) {
         show = false
     }
 }
@@ -123,9 +154,15 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+    disposed = true
+    clearOpenTimer()
+    clearCloseTimer()
     // 清理事件监听，防止内存泄漏和重复处理
     document.removeEventListener('keydown', handleEscape);
     document.removeEventListener('click', clickClose);
+    if (container?.open) {
+        container.close()
+    }
 })
 
 </script>

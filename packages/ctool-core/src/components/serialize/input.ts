@@ -23,7 +23,7 @@ type Option = {
         attribute_prefix: string,
     }
 }
-const defaultOption: Option = {
+const createDefaultOption = (): Option => ({
     csv: {
         type: "row_object",
         keyed_key: 0
@@ -38,7 +38,7 @@ const defaultOption: Option = {
     xml: {
         attribute_prefix: "",
     }
-}
+})
 
 export default class Input implements InputBase<SerializeInputEncoderType>, HistorySerializable<Input> {
     public _: '_input_' = '_input_'
@@ -53,7 +53,7 @@ export default class Input implements InputBase<SerializeInputEncoderType>, Hist
     constructor(type: SerializeInputEncoderType = 'json', value: string = "") {
         this.type = type;
         this.value = value;
-        this.option = defaultOption
+        this.option = createDefaultOption()
     }
 
     isSaveHistory() {

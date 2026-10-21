@@ -82,7 +82,7 @@
 import {initialize, useAction} from "@/store/action";
 import {createTextInput, createTextOutput} from "@/components/text"
 import Text from "@/helper/text";
-import {watch} from "vue";
+import {onScopeDispose, watch} from "vue";
 import GenerateOptionColor from "./GenerateOptionColor.vue";
 import {generateOptionsHandle, defaultGenerateOption} from "./util";
 import QRCodeStyling from 'qr-code-styling'
@@ -98,8 +98,10 @@ const generateOptionSize: ComponentSizeType = "default"
 
 let image = $shallowRef(Text.empty())
 let output = $shallowRef(Text.empty())
+let renderVersion = 0
 
 const update = async () => {
+    const version = ++renderVersion
     if (action.current.input.text.isError()) {
         output = Text.fromError(action.current.input.text.toString())
         return;
@@ -114,14 +116,23 @@ const update = async () => {
         if (!result){
             throw new Error('generated error')
         }
-        output = await Text.fromBlob(result)
+        const text = await Text.fromBlob(result)
+        if (version === renderVersion) {
+            output = text
+        }
     } catch (e) {
-        output = Text.fromError($error(e))
+        if (version === renderVersion) {
+            output = Text.fromError($error(e))
+        }
     }
 }
 
 const uploadHandle = async (value: File) => {
-    image = (await Text.fromBlob(value)).setFileName(value.name)
+    const version = ++renderVersion
+    const text = (await Text.fromBlob(value)).setFileName(value.name)
+    if (version === renderVersion) {
+        image = text
+    }
 }
 
 watch(
@@ -131,4 +142,8 @@ watch(
     () => update(),
     {immediate: true, deep: true}
 )
+
+onScopeDispose(() => {
+    renderVersion++
+})
 </script>

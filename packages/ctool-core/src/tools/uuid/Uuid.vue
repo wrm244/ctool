@@ -10,7 +10,7 @@
         </HeightResize>
         <Card class="ctool-page-option">
             <Align horizontal="center">
-                <InputNumber v-model="action.current.amount" :label="$t('uuid_amount')" :width="110" />
+                <InputNumber v-model="action.current.amount" :label="$t('uuid_amount')" :width="110" :min="1" :max="1000" />
                 <Bool border label="ULID" v-model="action.current.ulid" />
                 <Bool border :label="$t('uuid_is_upper')" v-model="action.current.isUpper" />
                 <Bool border
@@ -59,8 +59,10 @@ const action = useAction(await initialize<{
 }));
 
 const handle = () => {
-    let result: string[] = [];
-    for (let i = 0, l = action.current.amount; i < l; i++) {
+    const rawAmount = Math.floor(action.current.amount);
+    const amount = Number.isFinite(rawAmount) ? Math.min(1000, Math.max(1, rawAmount)) : 1;
+    const result: string[] = [];
+    for (let i = 0; i < amount; i++) {
         result.push(!action.current.ulid ? uuidV4() : ulid());
     }
     action.current.result = result;

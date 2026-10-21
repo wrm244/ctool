@@ -6,7 +6,7 @@
             :data-type="props.type"
             :style="props.long ? {width:'100%'} : {}"
         >
-            <button @click="click" :disabled="props.disabled" :aria-busy="props.loading ? `true` : `false`">
+            <button @click="click" :disabled="props.disabled || props.loading" :aria-busy="props.loading ? `true` : `false`">
                 <slot>{{ text }}</slot>
             </button>
         </div>
@@ -50,7 +50,11 @@ const props = defineProps({
 
 const emit = defineEmits<{ (e: 'click'): void }>()
 
-const click = () => emit('click')
+const click = () => {
+    if (!props.disabled && !props.loading) {
+        emit('click')
+    }
+}
 
 </script>
 <style>

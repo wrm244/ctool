@@ -19,7 +19,7 @@ export const lrc = (text: Text) => {
     text.toHexArray().forEach(item => {
         result += parseInt(item, 16);
     })
-    return 256 - (result % 256);
+    return (256 - (result % 256)) % 256;
 }
 
 export const crc = async (text: Text, type: CrcType) => {

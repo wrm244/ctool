@@ -68,7 +68,7 @@
 import {SerializeInput, createSerializeInput} from "./index"
 import {csvTableKeyedType} from "./input"
 import {serializeInputEncoderLists, SerializeInputEncoderType} from "@/types"
-import {defineAsyncComponent, nextTick, PropType, StyleValue, toRaw, watch} from "vue"
+import {defineAsyncComponent, nextTick, PropType, StyleValue, toRaw, watch, onScopeDispose} from "vue"
 import Serialize from "@/helper/serialize"
 import {debounce} from "lodash";
 import {sizeConvert} from "@/components/util";
@@ -169,6 +169,10 @@ const transform = debounce(async () => {
         return current.serialization = Serialize.fromError($error(e))
     }
 }, 200)
+
+onScopeDispose(() => {
+    transform.cancel()
+})
 
 watch(() => {
     return {

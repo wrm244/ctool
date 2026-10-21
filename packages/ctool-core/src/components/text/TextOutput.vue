@@ -112,7 +112,7 @@
 <script setup lang="ts">
 import { TextOutput, createTextOutput } from "./index";
 import { copyImage as _copyImage } from "@/helper/clipboard";
-import { nextTick, PropType, StyleValue, watch } from "vue";
+import { nextTick, PropType, StyleValue, watch, onScopeDispose } from "vue";
 import Text, { encodings, Encoding } from "@/helper/text";
 import { textOutputEncoderLists, TextOutputEncoderType } from "@/types";
 import { sizeConvert } from "@/components/util";
@@ -187,6 +187,7 @@ const error = $computed(() => {
 let result = $ref("");
 
 let analyseEncoding = $ref<Encoding>("utf-8");
+let renderVersion = 0;
 
 const copyImage = (base64: string) => {
     _copyImage(base64, () => {
@@ -204,7 +205,11 @@ watch(
         };
     },
     async ({ data, type, option, isEncoding }) => {
+        const version = ++renderVersion;
         await nextTick();
+        if (version !== renderVersion) {
+            return;
+        }
         exception = "";
         if (data.isError() || data.isEmpty()) {
             result = "";
@@ -232,19 +237,28 @@ watch(
                         throw new Error("Not Image File");
                     }
                     await data.calculateImageSize();
+                    if (version !== renderVersion) {
+                        return;
+                    }
                     r = data.toDataUrl();
                     break;
             }
-            if (r !== "") {
+            if (r !== "" && version === renderVersion) {
                 success();
                 result = r;
             }
         } catch (e) {
-            exception = $error(e);
+            if (version === renderVersion) {
+                exception = $error(e);
+            }
         }
     },
     { immediate: true, deep: true },
 );
+
+onScopeDispose(() => {
+    renderVersion++;
+});
 
 const style = $computed(() => {
     let css: StyleValue = {};

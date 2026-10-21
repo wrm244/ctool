@@ -63,21 +63,23 @@ const action = useAction(await initialize<InitializeType>({
 let loading = $ref(false)
 
 const convert = async () => {
-    loading = true
     if (action.current.input.trim() === "") {
         action.current.response = "";
+        loading = false
         return;
     }
-    request({
-        "hex": action.current.input,
-        "offset": action.current.offset,
-        "arch": ["arm64", "arm", "armbe", "thumb", "thumbbe"]
-    }).then(({data}) => {
+    loading = true
+    try {
+        const {data} = await request({
+            "hex": action.current.input,
+            "offset": action.current.offset,
+            "arch": ["arm64", "arm", "armbe", "thumb", "thumbbe"]
+        })
         action.current.response = data;
         action.success()
-    }).finally(() => {
+    } finally {
         loading = false
-    })
+    }
 }
 
 const result = $computed(() => {

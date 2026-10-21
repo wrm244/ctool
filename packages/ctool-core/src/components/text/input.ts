@@ -12,14 +12,14 @@ type Option = {
         preserve_line_breaks: boolean
     }
 }
-const defaultOption: Option = {
+const createDefaultOption = (): Option => ({
     text: {
         encoding: "utf-8"
     },
     hex: {
         preserve_line_breaks: false
     }
-}
+})
 
 export default class Input implements InputBase<TextInputEncoderType, string | File>, HistorySerializable<Input> {
     public _: '_input_' = '_input_'
@@ -34,7 +34,7 @@ export default class Input implements InputBase<TextInputEncoderType, string | F
     constructor(type: TextInputEncoderType = 'text', value: string = "") {
         this.type = type;
         this.value = value;
-        this.option = defaultOption
+        this.option = createDefaultOption()
     }
 
     isSaveHistory() {

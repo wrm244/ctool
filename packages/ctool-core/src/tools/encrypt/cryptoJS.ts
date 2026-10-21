@@ -1,5 +1,4 @@
 import CryptoJS from "crypto-js";
-import { padEnd } from "lodash";
 
 const modeMap = {
     ECB: CryptoJS.mode.ECB,
@@ -42,15 +41,16 @@ export type Option = {
 };
 // 秘钥处理
 const secretHandle = (name: string, secret = "", length: number = 0, fill = true) => {
-    if (!fill && secret.length === 0) {
+    const secretBytes = new TextEncoder().encode(secret)
+    if (!fill && secretBytes.length === 0) {
         throw new Error(`[${name}] required`);
     }
-    if (length === 0 || secret.length === length) {
-        return CryptoJS.enc.Utf8.parse(secret);
+    if (length === 0 || secretBytes.length === length) {
+        return CryptoJS.lib.WordArray.create(secretBytes);
     }
     // 长度截取
-    if (secret.length > length) {
-        return CryptoJS.enc.Utf8.parse(secret.substring(0, length));
+    if (secretBytes.length > length) {
+        return CryptoJS.lib.WordArray.create(secretBytes.slice(0, length));
     }
 
     // 不使用填充报错
@@ -58,7 +58,9 @@ const secretHandle = (name: string, secret = "", length: number = 0, fill = true
         throw new Error(`[${name}] length !== ${length}`);
     }
     // 内容填充
-    return CryptoJS.enc.Utf8.parse(padEnd(secret, length, "\0"));
+    const padded = new Uint8Array(length);
+    padded.set(secretBytes);
+    return CryptoJS.lib.WordArray.create(padded);
 };
 
 // aes

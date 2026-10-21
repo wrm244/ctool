@@ -99,9 +99,21 @@ const lineInfoHandle = (editor: monaco.editor.IStandaloneCodeEditor) => {
             render(item.range, editor);
         });
 };
-const lineInfoDecoration = debounce(function (editor: monaco.editor.IStandaloneCodeEditor) {
-    setTimeout(() => lineInfoHandle(editor), 100);
-}, 300);
+const lineInfoDecorationMap = new WeakMap<monaco.editor.IStandaloneCodeEditor, ReturnType<typeof debounce>>();
+const lineInfoDecoration = (editor: monaco.editor.IStandaloneCodeEditor) => {
+    let handler = lineInfoDecorationMap.get(editor);
+    if (!handler) {
+        handler = debounce(() => {
+            setTimeout(() => {
+                if (!(editor as any)._isDisposed) {
+                    lineInfoHandle(editor);
+                }
+            }, 100);
+        }, 300);
+        lineInfoDecorationMap.set(editor, handler);
+    }
+    handler();
+};
 
 class LineInfo {
     private readonly editor: monaco.editor.IStandaloneCodeEditor;
@@ -118,7 +130,11 @@ class LineInfo {
         this.editor.onDidChangeModelLanguage(() => this.render());
         this.editor.onDidChangeModel(() => this.render());
         this.editor.onDidChangeModelContent(() => this.render());
-        setTimeout(() => this.render(), 500);
+        setTimeout(() => {
+            if (!(this.editor as any)._isDisposed) {
+                this.render();
+            }
+        }, 500);
     }
 
     status(status: boolean) {

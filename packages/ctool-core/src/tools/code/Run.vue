@@ -95,6 +95,7 @@ const languageVersionLists: SelectOption = $computed(() => {
 })
 let isEnable = $ref(false)
 let isRunning = $ref(false)
+let usedRequestVersion = 0
 const run = () => {
     try {
         isRunning = true;
@@ -140,16 +141,24 @@ watch(
 )
 
 const resetUsed = () => {
+    const version = ++usedRequestVersion
     if (config.client_id === "" || config.client_secret === "" ){
+        used = 0
+        isEnable = false
         return;
     }
     getUsed().then(times => {
+        if (version !== usedRequestVersion) {
+            return
+        }
         used = times
         isEnable = true
-    }).catch(e => {
+    }).catch(() => {
+        if (version !== usedRequestVersion) {
+            return
+        }
         used = 0
         isEnable = false
-        throw e
     })
 }
 onMounted(() => {
