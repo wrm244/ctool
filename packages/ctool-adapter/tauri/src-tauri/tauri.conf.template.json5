@@ -37,6 +37,10 @@
         "withGlobalTauri": true,
         "security": {
             "csp": "default-src 'self'; connect-src 'self' ipc://localhost https:; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:",
+            // style-src 禁止 Tauri 注入 nonce/hash：应用依赖运行时注入的样式（Monaco、Element Plus），
+            // 而 CSP3 规定 style-src 一旦带 nonce/hash，'unsafe-inline' 即失效，这些样式会被全部拒绝。
+            // 前端 HTML 也已不再写内联 <style>（骨架样式改为外链），这里做第二层防护。
+            "dangerousDisableAssetCspModification": ["style-src"],
             "capabilities": ["desktop-capability"]
         },
         "windows": [

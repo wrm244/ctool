@@ -4,10 +4,30 @@
  * 用途：首屏关键路径要下载并执行约 1.7MB(gzip) 的 JS，期间 #app 是空的，浏览器给的是全白/全黑。
  * 这套骨架在 JS 执行前就能画出与真实 complex 布局同形的壳，撤下时零跳变。
  *
- * ⚠️ 同步维护：tool.html 里 <style id="ctool-boot-style"> 是本文件的内联副本
- *    （必须内联，否则 JS 执行前没有样式）。改这里时请同步那份副本。
- *    index.html 里另有一份最小版本。
+ * ⚠️ 必须由 tool.html / index.html 用 <link rel="stylesheet"> 引入，不能改成内联 <style>：
+ *    Tauri 会把 HTML 里每个 <style> 打上 nonce，并把 'nonce-xxx' 追加进 CSP 的 style-src。
+ *    按 CSP3，style-src 一旦带 nonce，'unsafe-inline' 就整体失效，Monaco、Element Plus 等
+ *    运行时注入的 <style> 与 style 属性会被全部拒绝（"Refused to apply a stylesheet ..."）。
+ *    外链样式表不受 nonce 影响，'unsafe-inline' 得以保留。
+ *
+ * 两份骨架：.ctool-boot 是主界面（tool.html、Suspense fallback），.ctool-boot-min 是中转页（index.html）。
  */
+
+/* 样式表加载前的兜底，避免暗色主题白闪、body 默认 8px 外边距导致布局跳动 */
+html {
+    background: #ffffff;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+    html {
+        background: #242424;
+    }
+}
 
 .ctool-boot {
     /* 取色与 style.css 的 [data-theme] 保持一致 */
@@ -274,5 +294,74 @@
 
     .ctool-boot--done {
         transition: none;
+    }
+}
+
+/*
+ * index.html（跳转页）用的最小骨架：居中 logo + 进度线。
+ * 尺寸沿用扩展弹窗的 800x580，保持跳转瞬间的窗口形状不跳变。
+ */
+.ctool-boot-min {
+    --ctool-boot-bg: #ffffff;
+    --ctool-boot-chip: #e9ebef;
+    --ctool-boot-primary: #1abc9c;
+
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    width: 800px;
+    height: 580px;
+    margin: 0 auto;
+    overflow: hidden;
+    background-color: var(--ctool-boot-bg);
+}
+
+.ctool-boot-min svg {
+    width: 34px;
+    height: 34px;
+    color: var(--ctool-boot-primary);
+    fill: currentColor;
+    animation: ctool-boot-breath 1.8s ease-in-out infinite;
+}
+
+.ctool-boot-min .line {
+    position: relative;
+    width: 132px;
+    height: 2px;
+    border-radius: 2px;
+    background-color: var(--ctool-boot-chip);
+    overflow: hidden;
+}
+
+.ctool-boot-min .line::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 42%;
+    border-radius: inherit;
+    background-color: var(--ctool-boot-primary);
+    animation: ctool-boot-slide 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@media (prefers-color-scheme: dark) {
+    .ctool-boot-min {
+        --ctool-boot-bg: #242424;
+        --ctool-boot-chip: #3a3a3a;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ctool-boot-min svg,
+    .ctool-boot-min .line::after {
+        animation: none;
+    }
+
+    .ctool-boot-min .line::after {
+        left: 0;
+        width: 30%;
     }
 }

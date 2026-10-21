@@ -2,7 +2,8 @@
     <!--
         启动骨架：既是 <Suspense> 的 fallback（切工具时异步 setup 的等待），
         也是 tool.html 首屏骨架撤下后的接续视觉。
-        标记与 tool.html 里的 #ctool-boot 保持一致，样式见 src/statics/boot.css。
+        标记与 tool.html 里的 #ctool-boot 保持一致，样式见 src/statics/boot.css
+        （由 tool.html 外链引入）。
     -->
     <div class="ctool-boot" role="status" aria-live="polite" aria-label="加载中 / Loading">
         <div class="ctool-boot-top">

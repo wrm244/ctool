@@ -4,8 +4,8 @@ import platform from "@/helper/platform";
 import ctool from "@/helper/plugin";
 import router from "@/helper/router";
 import "@/statics/style.css";
-// 启动骨架样式：tool.html 里另有一份内联副本用于 JS 执行前的首屏
-import "@/statics/boot.css";
+// 启动骨架样式由 tool.html 以 <link rel="stylesheet"> 引入（不能内联，见 boot.css 顶部说明），
+// 这里不再 import，避免同一份样式被重复打包。
 import Tool from "@/Tool.vue";
 import { initPermission as initClipboardPermission } from "@/helper/clipboard";
 
@@ -71,8 +71,7 @@ const removeBoot = (() => {
         }
         removed = true;
         document.getElementById("ctool-boot")?.remove();
-        // 内联副本撤掉后由打包进 entry 的 boot.css 接管（Suspense fallback 仍然需要）
-        document.getElementById("ctool-boot-style")?.remove();
+        // 骨架样式是外链文件，保留即可：<Suspense> 的 fallback（Boot.vue）还要用
     };
 })();
 
