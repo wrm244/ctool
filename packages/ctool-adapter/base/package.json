@@ -8,11 +8,11 @@
     },
     "devDependencies": {
         "@types/node": "catalog:",
-        "typescript": "catalog:",
         "tsdown": "catalog:",
+        "typescript": "catalog:",
         "unrun": "catalog:"
     },
     "dependencies": {
-        "zip-a-folder": "^6.1.4"
+        "zip-a-folder": "^6.2.0"
     }
 }

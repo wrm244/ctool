@@ -14,10 +14,10 @@
         "ctool-config": "workspace:*"
     },
     "devDependencies": {
-        "@types/firefox-webext-browser": "^143.0.0",
+        "@types/firefox-webext-browser": "^143.0.1",
         "@types/node": "catalog:",
-        "typescript": "catalog:",
         "tsdown": "catalog:",
+        "typescript": "catalog:",
         "unrun": "catalog:"
     }
 }

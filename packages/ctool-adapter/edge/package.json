@@ -14,10 +14,10 @@
         "ctool-config": "workspace:*"
     },
     "devDependencies": {
-        "@types/chrome": "^0.2.5",
+        "@types/chrome": "^0.3.5",
         "@types/node": "catalog:",
-        "typescript": "catalog:",
         "tsdown": "catalog:",
+        "typescript": "catalog:",
         "unrun": "catalog:"
     }
 }
