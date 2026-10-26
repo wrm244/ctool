@@ -3,36 +3,6 @@
     windows_subsystem = "windows"
 )]
 
-use dirs;
-use reqwest::blocking::Client;
-use std::sync::OnceLock;
-use std::time::Duration;
-
-static HTTP_CLIENT: OnceLock<Client> = OnceLock::new();
-
-fn http_client() -> &'static Client {
-    HTTP_CLIENT.get_or_init(|| {
-        Client::builder()
-            .timeout(Duration::from_secs(3))
-            .build()
-            .expect("Failed to build HTTP client")
-    })
-}
-
-fn check_file_exists_in_home_dir(file_path: &str) -> bool {
-    dirs::home_dir()
-        .map(|home| home.join(file_path).exists())
-        .unwrap_or(false)
-}
-
-fn is_url_accessible(url: &str) -> bool {
-    http_client()
-        .head(url)
-        .send()
-        .map(|resp| resp.status().is_success())
-        .unwrap_or(false)
-}
-
 #[tauri::command]
 fn toggle_dev_tools(window: tauri::WebviewWindow) {
     if !window.is_devtools_open() {
@@ -40,14 +10,6 @@ fn toggle_dev_tools(window: tauri::WebviewWindow) {
     } else {
         window.close_devtools();
     }
-}
-
-#[tauri::command]
-fn ctool_is_use_offline() -> bool {
-    if check_file_exists_in_home_dir(".ctool.tauri_use_local_file.lock") {
-        return true;
-    }
-    return !is_url_accessible("https://ctool.dev/_status.html");
 }
 
 fn main() {
@@ -61,10 +23,7 @@ fn main() {
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_clipboard_manager::init())
-        .invoke_handler(tauri::generate_handler![
-            toggle_dev_tools,
-            ctool_is_use_offline
-        ])
+        .invoke_handler(tauri::generate_handler![toggle_dev_tools])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

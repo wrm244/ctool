@@ -3,3 +3,5 @@
 /target/
 /icons/
 tauri.conf.json5
+# tauri build 生成的 ACL 清单与 schema，跟随 capabilities 变化，不入库
+/gen/schemas

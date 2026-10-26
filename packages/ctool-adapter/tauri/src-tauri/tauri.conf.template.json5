@@ -45,6 +45,8 @@
         },
         "windows": [
             {
+                // 桌面端直接用本地打包页面，不再经过 index.html 中转（也就没有中转页骨架/白屏）
+                "url": "tool.html",
                 "fullscreen": false,
                 "height": 650,
                 "minHeight": 300,

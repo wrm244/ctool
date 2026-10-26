@@ -10,8 +10,8 @@ mkdirSync(tempPath);
 // 核心文件
 copyCoreDist(tempPath)
 
-// 重写首页跳转文件
-writeFileSync(join(tempPath, 'index.html'), readFileSync(join(__dirname, '../index.html')).toString())
+// 桌面端不经过 index.html 中转：窗口直接打开 tool.html（见 tauri.conf.template.json5 的 window.url），
+// 首屏骨架由 tool.html 自带，所以这里不需要再改写任何 HTML。
 
 // 清理文件
 const configFilePath = join(__dirname, '../src-tauri/tauri.conf.json5')
