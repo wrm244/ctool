@@ -1,0 +1,154 @@
+# 编译 Tauri 桌面端安装包（Windows x64 / macOS arm64，暂不签名）并发布到 GitHub Release
+#
+# 触发方式
+#   1. push tag（v*.*.*）：构建完成后直接发布正式 Release，自动生成 release notes
+#   2. 手动 workflow_dispatch：需要填 tag，产物发布为 draft Release，检查无误后手动点发布
+#
+# 版本号来源是根目录 package.json 的 `version`，会先校验它和 tag 是否一致，不一致直接失败，
+# 避免打出来的安装包版本号和 Release 对不上。
+name: release-desktop
+
+on:
+    push:
+        tags:
+            - "v*.*.*"
+    workflow_dispatch:
+        inputs:
+            tag:
+                description: "发布用 tag，必须与 package.json 的 version 一致（例如 v2.6.0）"
+                required: true
+                default: "v2.6.0"
+
+permissions:
+    contents: write
+
+concurrency:
+    group: release-desktop-${{ github.ref }}
+    cancel-in-progress: false
+
+jobs:
+    version-check:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Use Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+
+            - name: 校验 tag 与 package.json 版本一致
+              env:
+                  RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+              run: |
+                  version="$(node -p "require('./package.json').version")"
+                  if [ "v${version}" != "${RELEASE_TAG}" ]; then
+                      echo "::error::tag ${RELEASE_TAG} 与 package.json 的 version ${version} 不一致"
+                      exit 1
+                  fi
+                  echo "版本校验通过：${RELEASE_TAG}"
+
+    desktop:
+        needs: version-check
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - os: windows-latest
+                      label: win
+                    - os: macos-latest
+                      label: mac-arm64
+        runs-on: ${{ matrix.os }}
+        timeout-minutes: 90
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            # release.ts 从 src-tauri/target/release 取产物，所以必须用 host 默认 target，
+            # 这里只校验 runner 架构，不给 tauri build 传 --target。
+            - name: 校验 runner 架构（macOS 必须 arm64）
+              if: runner.os == 'macOS'
+              shell: bash
+              run: |
+                  arch="$(uname -m)"
+                  echo "runner arch: ${arch}"
+                  if [ "${arch}" != "arm64" ]; then
+                      echo "::error::期望 arm64 runner，实际是 ${arch}，请改 matrix 里的 macOS runner"
+                      exit 1
+                  fi
+
+            - name: Install pnpm
+              uses: pnpm/action-setup@v4
+
+            - name: Use Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+                  cache: pnpm
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Install Rust stable
+              uses: dtolnay/rust-toolchain@stable
+
+            # tauri adapter 的 init 会 rm -rf src-tauri/target，target 缓存恢复后立刻被清掉，
+            # 所以只缓存 cargo registry/git，不缓存 target。
+            - name: Rust cache
+              uses: Swatinem/rust-cache@v2
+              with:
+                  workspaces: packages/ctool-adapter/tauri/src-tauri -> target
+                  cache-targets: false
+                  shared-key: ${{ matrix.label }}
+                  key: ${{ hashFiles('packages/ctool-adapter/tauri/src-tauri/Cargo.lock') }}
+
+            - name: Build core + tauri bundle
+              shell: bash
+              run: |
+                  pnpm run build
+                  node release.cjs init
+                  pnpm --filter ctool-adapter-tauri run platform-release
+                  node release.cjs get
+
+            - name: 列出产物
+              shell: bash
+              run: |
+                  ls -lh ./_release/
+                  if [ -z "$(ls -A ./_release/)" ]; then
+                      echo "::error::_release 目录为空，构建没有产出安装包"
+                      exit 1
+                  fi
+
+            - name: Upload artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: desktop-${{ matrix.label }}
+                  path: _release/*
+                  if-no-files-found: error
+                  retention-days: 7
+
+    publish:
+        needs: [version-check, desktop]
+        runs-on: ubuntu-latest
+        steps:
+            - name: Download artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  path: dist
+                  merge-multiple: true
+
+            - name: 列出待发布文件
+              run: ls -lh dist/
+
+            - name: Publish GitHub Release
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+                  name: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+                  target_commitish: ${{ github.sha }}
+                  files: dist/*
+                  # 手动触发先发 draft，确认没问题再手动发布；打 tag 触发则直接发正式版
+                  draft: ${{ github.event_name == 'workflow_dispatch' }}
+                  generate_release_notes: true
