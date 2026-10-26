@@ -1,6 +1,6 @@
 # Maintainer: asukaminato <asukaminato@nyan.eu.org>
 pkgname=ctool-bin
-pkgver="v2.6.0"
+pkgver="v2.7.0"
 _pkgname=${pkgname/-bin/}
 pkgrel=1
 pkgdesc='程序开发常用工具 chrome /edge/firefox /utools/windows /linux/mac'
