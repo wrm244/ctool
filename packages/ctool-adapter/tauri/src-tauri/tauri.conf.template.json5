@@ -24,7 +24,7 @@
         "targets": [
             "deb",
             "appimage",
-            "msi",
+            // Windows 只发编译出的 exe，不打 msi 安装包
             "app",
             "dmg"
         ],

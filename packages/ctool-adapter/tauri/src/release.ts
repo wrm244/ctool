@@ -5,6 +5,19 @@ import os from 'os';
 
 const platform = ["win32", "darwin"].includes(os.platform()) ? os.platform() : "linux";
 
+const getWinExe = () => {
+    const path = join(__dirname, "../src-tauri/target/release")
+    const files = readdirSync(path)
+        .map(item => join(path, item))
+        .filter(item => statSync(item).isFile())
+        .filter(item => {
+            const fileInfo = parse(item)
+            return fileInfo.ext === ".exe" && !/setup|install/i.test(fileInfo.name)
+        })
+    const hit = files.find(item => parse(item).name.includes("ctool"))
+    return hit || files[0] || ""
+}
+
 const getTauriReleaseFile = (dir: string, name: string, extension: string) => {
     const path = join(__dirname, "../src-tauri/target/release", dir)
     const files = readdirSync(path).map(item => join(path, item)).filter(item => {
@@ -30,8 +43,10 @@ const getTauriReleaseFile = (dir: string, name: string, extension: string) => {
     }
 
     if (platform === "win32") {
-        filesPush(getTauriReleaseFile("", 'ctool', '.exe'), "win.exe")
-        filesPush(getTauriReleaseFile('bundle/msi', 'ctool', '.msi'), "win.msi")
+        // Windows 只发布编译出来的可执行文件，不发 msi / nsis 安装包（安装包已在 tauri.conf 的 targets 里去掉）
+        // 注意 tauri build 产出的二进制名不一定等于 productName（当前 Cargo 包名是 tauri-app），
+        // 所以按 .exe 扫描 target/release，而不是硬编码文件名。
+        filesPush(getWinExe(), "win.exe")
     }
     if (platform === "darwin") {
         filesPush(getTauriReleaseFile("bundle/dmg", 'ctool', '.dmg'), "mac.dmg")
