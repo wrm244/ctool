@@ -12,6 +12,7 @@
             @keyup.esc="close"
         >
             <template #suffix>
+                <span class="ctool-search-shortcut" v-if="input === ''">{{ shortcutLabel }}</span>
                 <Icon name="search" :size="12"/>
             </template>
         </Input>
@@ -32,7 +33,7 @@ import {toolKeywords} from "@/buildDataTemp";
 import {getTool, FeatureInterface} from "@/config";
 import useOperate from "@/store/operate";
 import useSetting from "@/store/setting";
-import {onUnmounted, watch} from "vue";
+import {nextTick, onMounted, onUnmounted, watch} from "vue";
 
 const setting = useSetting()
 const operate = useOperate()
@@ -41,6 +42,15 @@ let input = $ref("")
 let inputElement = $ref<HTMLInputElement | null>(null);
 let isInput = $ref(false);
 let selectIndex = $ref(0)
+
+// 搜索索引：关键字表是构建期产物，运行期不会变化，预先转小写避免每次输入重复 join/toLowerCase
+const searchIndex = toolKeywords.map((item) => ({
+    item,
+    terms: item.search.map((term) => term.toLowerCase()),
+}))
+
+// 快捷键提示：macOS 显示 ⌘K，其余平台显示 Ctrl+K
+const shortcutLabel = /mac|iphone|ipad|ipod/i.test(navigator.platform || navigator.userAgent) ? "⌘K" : "Ctrl+K"
 
 const items = $computed(() => {
     let lists: FeatureInterface[]
@@ -57,9 +67,11 @@ const items = $computed(() => {
             )
         ]
     } else {
-        lists = toolKeywords.filter((item) => item.search.join(",").includes(input.toLowerCase())).map(item => {
-            return getTool(item.name).getFeature(item.feature)
-        })
+        // 逐个关键字匹配，避免 join 后跨关键字边界的误匹配（例如输入 "h,md"）
+        const query = input.toLowerCase()
+        lists = searchIndex
+            .filter(({terms}) => terms.some((term) => term.includes(query)))
+            .map(({item}) => getTool(item.name).getFeature(item.feature))
     }
     if (lists.length === 0) {
         return [{label: $t(`main_ui_null`), tool: "", feature: ""}]
@@ -102,7 +114,45 @@ const load = (element: HTMLInputElement) => {
     document.addEventListener("click", documentClickHandler);
 }
 
+// 判断焦点是否在可输入元素内：在输入框里按 "/" 应该输入字符而不是唤起搜索
+const isTypingTarget = (target: EventTarget | null): boolean => {
+    const element = target as HTMLElement | null
+    if (!element || !element.tagName) {
+        return false
+    }
+    const tagName = element.tagName.toLowerCase()
+    return tagName === "input" || tagName === "textarea" || tagName === "select" || element.isContentEditable
+}
+
+// 快捷键唤起搜索：⌘K / Ctrl+K 全局可用，"/" 仅在非输入状态下生效
+const shortcutHandler = (e: KeyboardEvent) => {
+    if (e.altKey || e.isComposing) {
+        return
+    }
+    const isSearchKey = (e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === "k"
+    const isSlashKey = e.key === "/" && !e.metaKey && !e.ctrlKey && !e.shiftKey && !isTypingTarget(e.target)
+    if (!isSearchKey && !isSlashKey) {
+        return
+    }
+    // 已经聚焦在搜索框内，交给浏览器默认行为
+    if (e.target === inputElement) {
+        return
+    }
+    e.preventDefault()
+    open()
+    // 首次按键时输入框可能还没完成挂载，下一帧再聚焦
+    nextTick(() => {
+        inputElement?.focus()
+        inputElement?.select()
+    })
+}
+
+onMounted(() => {
+    document.addEventListener("keydown", shortcutHandler);
+});
+
 onUnmounted(() => {
+    document.removeEventListener("keydown", shortcutHandler);
     inputElement?.removeEventListener("focus", focusHandler);
     document.removeEventListener("click", documentClickHandler);
 });
@@ -140,6 +190,16 @@ watch(() => input, () => selectIndex = 0, {immediate: true})
 </script>
 
 <style>
+.ctool-search-shortcut {
+    font-size: 11px;
+    line-height: 1;
+    color: var(--form-element-placeholder-color);
+    border: 1px solid var(--ctool-border-color);
+    border-radius: 3px;
+    padding: 1px 3px;
+    white-space: nowrap;
+}
+
 .ctool-search-block {
     z-index: 99;
     position: fixed;
