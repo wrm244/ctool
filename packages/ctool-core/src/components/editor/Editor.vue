@@ -21,6 +21,7 @@ import { getEditorLanguage } from "@/helper/code";
 import { DisplayPosition } from "@/types";
 import { useTheme } from "@/store/setting";
 import { sizeConvert } from "../util";
+import Message from "@/helper/message";
 import event from "@/event";
 
 const modelValue = defineModel<string>({
@@ -163,6 +164,16 @@ const create = async (element: HTMLElement) => {
         
         // 编辑器配置
         updateEditorConfig();
+    }).catch((e) => {
+        // 编辑器资源加载失败（离线 / chunk 请求失败）时不能只抛一个未捕获的 rejection，
+        // 否则会留下一个永远不可能成功的待写入定时器，界面也一直没有反馈
+        if (pendingValueTimer !== null) {
+            clearInterval(pendingValueTimer);
+            pendingValueTimer = null;
+        }
+        if (!disposed) {
+            Message.error($error(e));
+        }
     });
 };
 

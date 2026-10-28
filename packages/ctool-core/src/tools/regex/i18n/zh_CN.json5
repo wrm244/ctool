@@ -9,6 +9,7 @@
     "ignore_case": "忽略大小写",
     "output_count": "共 {0} 个匹配项",
     "output_empty": "没有匹配结果，请检查正则",
+    "output_timeout": "表达式执行超时（可能存在灾难性回溯），已中断本次计算",
     "reference_name": "字符",
     "reference_text": "描述",
 }

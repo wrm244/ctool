@@ -82,15 +82,20 @@ export default (str, options: Partial<typeof defaults> = {}) => {
         .reduce((obj, line) => {
             // Replace only '=' that are not escaped with '\' to handle separator inside key
             const colonifiedLine = line.replace(/(?<!\\)=/, ':');
-            const key = colonifiedLine
+            // 没有分隔符的行（裸键名）：search 返回 -1 会让 key 变成空字符串、
+            // 整行内容变成 value，属于静默丢数据；按 java properties 的习惯当作 key + 空值
+            const separatorIndex = colonifiedLine.search(/(?<!\\):/);
+            const normalizedLine = separatorIndex < 0 ? `${colonifiedLine}:` : colonifiedLine;
+            const normalizedIndex = separatorIndex < 0 ? normalizedLine.length - 1 : separatorIndex;
+            const key = normalizedLine
                 // Extract key from index 0 to first not escaped colon index
-                .substring(0, colonifiedLine.search(/(?<!\\):/))
+                .substring(0, normalizedIndex)
                 // Remove not needed backslash from key
                 .replace(/\\/g, '')
                 .trim();
 
-            let value = colonifiedLine
-                .substring(colonifiedLine.search(/(?<!\\):/) + 1)
+            let value = normalizedLine
+                .substring(normalizedIndex + 1)
                 .trim();
 
             if (parsedOptions.parseNumber && isNumeric(value)) {

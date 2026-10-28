@@ -33,6 +33,10 @@
 <script lang="ts" setup>
 import { initialize, useAction } from "@/store/action";
 import { watch, onUnmounted } from "vue";
+import Message from "@/helper/message";
+
+// 可选的 bcrypt cost 上限
+const MAX_ROUNDS = 15;
 import { range } from "lodash";
 
 // 加密过程较慢 使用 worker 避免页面卡死
@@ -74,7 +78,8 @@ worker.onmessage = function (event) {
 worker.onerror = function (event) {
     generateLoading = false
     checkLoading = false
-    throw new Error(event.message || 'bcrypt worker error')
+    // 事件回调里 throw 既不会提示用户，也无法中断任何流程
+    Message.error($error(event.message || 'bcrypt worker error'))
 }
 
 const workerPost = (method: string, data: any) => {
@@ -87,8 +92,10 @@ const generate = () => {
     if (action.current.input === "") {
         return;
     }
-    if (action.current.rounds < 4 || action.current.rounds > 31) {
-        throw new Error($t('bcrypt_rounds_range', [4, 31]))
+    // 上限收到 15：bcrypt 的 cost 每加 1 耗时翻倍，31 相当于 2^31 轮，
+    // 在 worker 里等于永久卡住且无法取消
+    if (action.current.rounds < 4 || action.current.rounds > MAX_ROUNDS) {
+        throw new Error($t('bcrypt_rounds_range', [4, MAX_ROUNDS]))
     }
     generateLoading = true
     workerPost('hash', { input: action.current.input, rounds: action.current.rounds, version: action.current.version })
@@ -125,7 +132,7 @@ const checkCallback = (err: Error, res: boolean) => {
     })
 }
 
-const rounds = range(4, 32).map((r) => {
+const rounds = range(4, MAX_ROUNDS + 1).map((r) => {
     return { label: `${$t('bcrypt_rounds')} ${r}`, value: r }
 });
 

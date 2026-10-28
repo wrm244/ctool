@@ -33,13 +33,13 @@
     <ExtendPage v-model="isMore">
         <Align direction="vertical">
             <Display
-                v-for="item in timezoneOptions"
+                v-for="item in moreRows"
                 position="right-center"
-                :text="item['label']"
-                :type="item['value'] === action.current.type ? `danger` : `general`"
-                @click="() => $copy(convert(action.current.input, action.current.type, item['value']))"
+                :text="item.label"
+                :type="item.value === action.current.type ? `danger` : `general`"
+                @click="() => $copy(item.text)"
             >
-                <Input :model-value="convert(action.current.input, action.current.type, item['value'])" :size="size" />
+                <Input :model-value="item.text" :size="size" />
             </Display>
         </Align>
     </ExtendPage>
@@ -109,6 +109,18 @@ const getHandle = (target: string) => {
         return $error(e);
     }
 };
+
+// 时区列表有几百项，原来在模板里给每一行单独调用 convert（每次两次 dayjs.tz 转换），
+// 每敲一个字符就要做上千次 Intl 解析；这里统一算一次，结果与输入/类型/语言绑定
+const moreRows = $computed(() => {
+    return timezoneOptions.map((item) => {
+        return {
+            label: item['label'],
+            value: item['value'],
+            text: getHandle(item['value']),
+        }
+    })
+})
 
 const setHandle = (source: string, value: string) => {
     action.current.input = value;

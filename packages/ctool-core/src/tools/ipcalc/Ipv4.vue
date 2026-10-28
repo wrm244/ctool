@@ -129,6 +129,8 @@ const action = useAction(await initialize({
 }))
 
 let help = $ref(false)
+// 子网枚举数量上限
+const SUBNET_LIMIT = 4096
 let maskSetShow = $ref(false)
 let maskAvailable = $ref(254)
 let error = $ref("")
@@ -136,6 +138,11 @@ let calc = $ref(new ipcalc())
 let showSubnet = $ref(false)
 
 const subnet = $computed(() => {
+    // 子网面板会逐条生成网段内所有地址，/8 有 1600 多万个、/0 有 42 亿个，
+    // 无上限枚举会直接卡死渲染进程，这里超过上限只提示不枚举
+    if (calc.size() > SUBNET_LIMIT) {
+        return Serialize.fromError($t('ipcalc_subnet_limit', {size: calc.size(), limit: SUBNET_LIMIT}))
+    }
     const lists: string[] = []
     calc.netmask.forEach((ip) => {
         lists.push(ip)

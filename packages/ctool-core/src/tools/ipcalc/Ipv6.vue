@@ -49,7 +49,7 @@
             </HeightResize>
             <template #extra>
                 <Align>
-                    <InputNumber size="small" :width="120" v-model="action.current.limit" :label="$t('ipcalc_limit')"/>
+                    <InputNumber size="small" :width="120" v-model="action.current.limit" :label="$t('ipcalc_limit')" :max="SUBNET_LIMIT" :min="1"/>
                     <Bool type="primary" size="small" v-model="action.current.abbr" :label="$t(`ipcalc_short`)" border/>
                     <Bool type="primary" size="small" v-model="action.current.random" :label="$t(`ipcalc_random`)" border/>
                 </Align>
@@ -89,6 +89,8 @@ const action = useAction(await initialize({
 
 let error = $ref("")
 let showSubnet = $ref(false)
+// 子网枚举数量上限（divideSubnet 会按 limit 逐个构造地址）
+const SUBNET_LIMIT = 4096
 
 watch(() => {
     return {input: action.current.input.trim()}
@@ -125,7 +127,9 @@ const abbreviate = $computed(() => {
 })
 
 const subnet = $computed(() => {
-    return util.subnet(action.current.input.trim(), action.current.mask0, action.current.mask1, action.current.limit, action.current.abbr, action.current.random)
+    // limit 未做上限时会生成海量子网（limit=1000000 就一次性构造百万个字符串），统一收口
+    const limit = Math.min(SUBNET_LIMIT, Math.max(1, Math.floor(Number(action.current.limit) || 1)))
+    return util.subnet(action.current.input.trim(), action.current.mask0, action.current.mask1, limit, action.current.abbr, action.current.random)
 })
 
 const ipRange = $computed(() => {

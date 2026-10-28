@@ -37,26 +37,26 @@ const action = useAction(await initialize({
 
 
 const output = $computed(() => {
+    // 纯计算：不能在 computed 里写 action.current.output（否则依赖自循环），
+    // 也不能在输出"error"后继续往下执行覆盖掉它
     if (action.current.input.text.isEmpty()) {
-        action.current.output = "";
+        return "";
     }
     if (action.current.input.text.isError()) {
-        action.current.output = "error";
+        return "error";
     }
     try {
         const asn1 = ASN1.decode(action.current.input.text.toUint8Array());
-        action.current.output = ASN1TOXML.decode2Xml(asn1);
+        return ASN1TOXML.decode2Xml(asn1);
     } catch (e) {
-        action.current.output = "";
+        return $error(e);
     }
 });
 
-watch(() => output, (output) => {
-    if (output === undefined) {
-        return;
-    }
+watch(output, (value) => {
+    action.current.output = value;
     action.save();
-}, { immediate: true, deep: true });
+}, { immediate: true });
 
 
 async function format() {

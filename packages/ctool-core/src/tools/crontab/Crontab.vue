@@ -23,7 +23,7 @@
             >
                 <Table
                     :columns="[{key:'exp',title:$t(`crontab_example`),width:150},{key:'text',title:$t(`crontab_description`)}]"
-                    :lists="example.map((item)=>{return {exp:item,text:conversion(item)}})"
+                    :lists="exampleRows"
                 />
                 <Link href="https://www.npmjs.com/package/cron-parser" style="height: 100%;display: flex;justify-content: center;align-items: center">
                     <img src="@/statics/tools/crontab/crontab.png" style="max-width: 95%;max-height: 95%" alt="crontab">
@@ -69,6 +69,10 @@ let output = $ref("")
 const conversion = (exp: string) => {
     return cronstrue.toString(exp, {locale, use24HourTimeFormat: true})
 }
+// 示例表格是内联表达式时每次渲染（每次按键）都会重新跑 15 次 cronstrue，这里改成只随语言变化重算
+const exampleRows = $computed(() => example.map((item) => {
+    return {exp: item, text: conversion(item)}
+}))
 watch(() => {
     return {
         input: action.current.input

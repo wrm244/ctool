@@ -89,8 +89,15 @@ const state = $ref<{
     send_content: "",
     logs: []
 })
+// 日志最多保留的条数
+const LOG_LIMIT = 500
+
 const log = async (content, type = "other") => {
     state.logs.push({content, type, time: dayjs().format("HH:mm:ss")});
+    // 日志不设上限时，长时间的推送会把数组和 DOM 无限撑大，这里只保留最近 LOG_LIMIT 条
+    if (state.logs.length > LOG_LIMIT) {
+        state.logs.splice(0, state.logs.length - LOG_LIMIT)
+    }
     await nextTick()
 
     if (action.current.keepScroll) {

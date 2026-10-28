@@ -84,7 +84,8 @@ class Ascii {
             default:
                 throw new Error('type error')
         }
-        if (dec < 0 || dec > 127) {
+        if (!Number.isInteger(dec) || dec < 0 || dec > 127) {
+            // NaN 能同时绕过 < 0 和 > 127 的比较，必须先判断是否整数
             throw new Error(`"${c}": input error`)
         }
         this.decData = `${dec}`

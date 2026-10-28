@@ -65,13 +65,21 @@ export const loadLanguages = async () => {
     if (loadPromise !== null) {
         return loadPromise;
     }
-    loadPromise = (async () => {
+    const promise = (async () => {
         const monaco = await import("monaco-editor/esm/vs/editor/editor.api");
         const list = monaco.languages.getLanguages();
         languageMap = buildLanguageMap(list);
         initCustomLanguages();
     })();
-    return loadPromise;
+    loadPromise = promise;
+    // 加载失败（离线 / monaco chunk 请求失败）时必须清掉缓存的 promise，
+    // 否则失败结果会被永久缓存，本次会话后续所有编辑器都再也无法初始化
+    promise.catch(() => {
+        if (loadPromise === promise) {
+            loadPromise = null;
+        }
+    });
+    return promise;
 };
 
 // 定义自定义语言

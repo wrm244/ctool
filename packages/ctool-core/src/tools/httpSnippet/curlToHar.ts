@@ -142,13 +142,17 @@ const buildR = (args: Arguments) => {
 };
 
 export default (str: string) => {
+    // 先拼回续行（多行 curl 命令是文档里的常见写法）再分词，否则分词结果不可靠
+    str = str.replace(/\\\r?\n\r?/g, " ")
     let tokens = parser(str);
-    str = str.replace(/\\\n\r?/g, " ")
     if (!('url' in tokens)) {
-        if (!(tokens._[1] as string).includes("http")) {
+        // 没有位置参数（例如只输入了 `curl` / `curl -X GET`）时 tokens._[1] 不存在，
+        // 直接 .includes 会抛 TypeError，这里统一报 Invalid curl command
+        const positional = `${tokens._?.[1] ?? ""}`
+        if (!positional.includes("http")) {
             throw new Error("Invalid curl command")
         }
-        str = str.replace((tokens._[1] as string), `--url ${tokens._[1]}`)
+        str = str.replace(positional, `--url ${positional}`)
         tokens = parser(str);
     }
     if (!tokens._.includes('curl')) {

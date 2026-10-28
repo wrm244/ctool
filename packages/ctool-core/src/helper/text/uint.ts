@@ -7,6 +7,8 @@ import {TextEncoder as CustomTextEncoder} from 'text-decoding'
 export default class Uint {
     private readonly _uint8Array: Uint8Array
     private readonly _encoding: Encoding; // 编码标示[参考]
+    // localUint8Array 的缓存（非 utf-8 时需要重新编码整个 buffer）
+    private _localCache: Uint8Array | null = null;
 
     constructor(uint8Array: Uint8Array, encoding: Encoding = "utf-8") {
         this._encoding = encoding;
@@ -62,6 +64,14 @@ export default class Uint {
     }
 
     localUint8Array() {
-        return this.to('utf-8').uint8Array
+        // getFiletype / isText / isBinary 都会调用，非 utf-8 文本每次都要解码再编码一遍整个 buffer，
+        // 这里缓存一次即可（Uint 的 buffer 是只读的，不会失效）
+        if (this.encoding === 'utf-8') {
+            return this.uint8Array
+        }
+        if (this._localCache === null) {
+            this._localCache = this.to('utf-8').uint8Array
+        }
+        return this._localCache
     }
 }

@@ -55,6 +55,11 @@ class Transform {
         if (number >= 0n) {
             return two.padStart(this.length, '0')
         }
+        // 原码/反码无法表示最小值（如 8 位的 -128），padStart 不会截断，
+        // 会默默输出多位二进制，因此这里显式报错
+        if (two.length > this.length - 1) {
+            throw new Error(`true form overflow: ${this.input}`)
+        }
         return '1' + two.padStart(this.length - 1, '0')
     }
 

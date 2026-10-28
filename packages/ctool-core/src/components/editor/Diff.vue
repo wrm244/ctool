@@ -42,6 +42,7 @@ import { getEditorLanguage } from "@/helper/code";
 import { DisplayPosition } from "@/types";
 import { useTheme } from "@/store/setting";
 import { sizeConvert } from "../util";
+import Message from "@/helper/message";
 import event from "@/event";
 
 const original = defineModel<string>("original", {
@@ -190,6 +191,15 @@ const create = async (element: HTMLElement) => {
         editorView.value = diffEditor;
         // 编辑器配置
         updateEditorConfig();
+    }).catch((e) => {
+        // 同 Editor.vue：编辑器资源加载失败时要清掉待写入定时器并给出提示
+        if (pendingDiffTimer) {
+            clearInterval(pendingDiffTimer);
+            pendingDiffTimer = null;
+        }
+        if (!disposed) {
+            Message.error($error(e));
+        }
     });
 };
 

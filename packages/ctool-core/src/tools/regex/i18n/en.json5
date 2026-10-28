@@ -9,6 +9,7 @@
     "ignore_case": "Ignore Case",
     "output_count": "{0} Total Matches",
     "output_empty": "No match result, please check expression",
+    "output_timeout": "Pattern execution timed out (possible catastrophic backtracking), the run was aborted",
     "reference_name": "Char",
     "reference_text": "Description"
 }

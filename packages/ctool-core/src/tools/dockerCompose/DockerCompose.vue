@@ -1,7 +1,7 @@
 <template>
     <HeightResize v-slot="{height}" v-row="'1-1'">
         <Textarea v-model="action.current.input" :placeholder="$t(`main_ui_input`)" :height="height" />
-        <Textarea v-model="output" :placeholder="$t(`main_ui_output`)" :height="height" :content="output" @success="action.save()" />
+        <Textarea :model-value="output" :placeholder="$t(`main_ui_output`)" :height="height" @success="action.save()" />
     </HeightResize>
 </template>
 
@@ -26,13 +26,11 @@ const output = $computed(() => {
     }
 })
 
-watch(() => {
-    return {url: action.current.input}
-}, () => {
-    try {
-        new URL(action.current.input)
+// 只要输入不为空就写入历史（之前误用了 UrlParse 的 URL 校验，
+// docker run 命令永远不是合法 URL，保存逻辑从来不会执行）
+watch(() => action.current.input, (input) => {
+    if ((input || "").trim() !== "") {
         action.save()
-    } catch (_) {
     }
 }, {immediate: true})
 </script>

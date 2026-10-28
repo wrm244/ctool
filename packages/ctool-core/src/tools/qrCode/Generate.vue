@@ -83,6 +83,7 @@ import {initialize, useAction} from "@/store/action";
 import {createTextInput, createTextOutput} from "@/components/text"
 import Text from "@/helper/text";
 import {onScopeDispose, watch} from "vue";
+import {debounce} from "lodash";
 import GenerateOptionColor from "./GenerateOptionColor.vue";
 import {generateOptionsHandle, defaultGenerateOption} from "./util";
 import QRCodeStyling from 'qr-code-styling'
@@ -139,7 +140,8 @@ watch(
     () => {
         return {option: action.current.option, image, text: action.current.input.text}
     },
-    () => update(),
+    // 每次按键都重建 canvas + 编码 PNG，内容长时一次就好几百毫秒，合并一下
+    debounce(() => update(), 250),
     {immediate: true, deep: true}
 )
 

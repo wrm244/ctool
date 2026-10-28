@@ -240,7 +240,12 @@ const general = {
         if (code === "") {
             return;
         }
-        this.beautify(Json.stringify(util.rename(Json.parse(code), type)));
+        try {
+            this.beautify(Json.stringify(util.rename(Json.parse(code), type)));
+        } catch (e) {
+            // 编辑器里的 JSON 可能正处在非法状态，不能把异常抛给点击事件（用户看不到任何反馈）
+            Message.error($error(e));
+        }
     },
     // 排序
     sort(type: "asc" | "desc") {
@@ -248,7 +253,11 @@ const general = {
         if (code === "") {
             return;
         }
-        this.beautify(Json.stringify(util[type === "asc" ? "sortAsc" : "sortDesc"](Json.parse(code))));
+        try {
+            this.beautify(Json.stringify(util[type === "asc" ? "sortAsc" : "sortDesc"](Json.parse(code))));
+        } catch (e) {
+            Message.error($error(e));
+        }
     },
     unicode2zh() {
         const code = this.getInput();

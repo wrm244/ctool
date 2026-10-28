@@ -47,12 +47,14 @@ function fixObjectArray(o) {
     for (j = 0; j < a.length; j++) {
         x = isArrayNoName(a[j], '[');
         if (x >= 0) {
-            if (a[j].substring(j) === '[]') {
-                a[j] = '{ "' + names[x % names.length] + '": ' + a[j] + "}";
+            // 用缩进数 x 判断当前行是否是空数组，用行号 j 会几乎永远不成立，
+            // 导致 |"[]"| 走进普通分支输出非法 JSON
+            if (a[j].substring(x) === '[]') {
+                a[j] = '{ "' + names[x % names.length] + '": ' + a[j].substring(x) + "}";
                 continue;
             }
-            if (a[j].substring(j) === '[],') {
-                a[j] = '{ "' + names[x % names.length] + '": ' + a[j].substring(0, a[j].length - 1) + "},";
+            if (a[j].substring(x) === '[],') {
+                a[j] = '{ "' + names[x % names.length] + '": ' + a[j].substring(x, a[j].length - 1) + "},";
                 continue;
             }
             a[j] = '{ "' + names[x % names.length] + '": ' + a[j];

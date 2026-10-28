@@ -7,9 +7,16 @@ const createTempElement = (innerHTML = "", type = "div", id = "") => {
     el.style.cssText = "display:none;"
     // 先消毒 HTML 再写入 DOM，防御 XSS（移除 script、事件处理器等）
     el.innerHTML = sanitizeHtml(innerHTML)
-    document.body.appendChild(el);
+    // 不再把临时节点挂到 body 上：解析不需要节点在文档里，
+    // 挂上去只会让每次解析都残留一份 DOM（SerializeInput 每次输入都会解析一次）
     return el;
 }
+
+// HTML 特殊字符转义，避免单元格内容里的 & < > 破坏表格结构
+const escapeHtml = (value: any): string => `${value ?? ""}`
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 
 const nodeFilter = (item: string): string => {
     if (item === null) {
@@ -60,18 +67,25 @@ const jsonOutputFormat = (json, type = "json", keyed_key = 0) => {
 }
 
 
+const tableKeysFromElement = (tableElement?: HTMLTableElement): string[] => {
+    const firstRow = tableElement?.getElementsByTagName('tr')[0];
+    if (!firstRow) {
+        return [];
+    }
+    const cells = firstRow.querySelectorAll('td,th');
+    const result: string[] = [];
+    for (let n = 0; n < cells.length; n++) {
+        result.push(nodeFilter(cells[n].innerHTML))
+    }
+    return result;
+}
+
 export const tableKeys = (table) => {
     table = table.trim();
     if (!table) {
         return [];
     }
-    const tableElement = createTempElement(table).getElementsByTagName('table')[0];
-    let cells = tableElement.getElementsByTagName('tr')[0].querySelectorAll('td,th');
-    let result: string[] = [];
-    for (let n = 0; n < cells.length; n++) {
-        result.push(nodeFilter(cells[n].innerHTML))
-    }
-    return result;
+    return tableKeysFromElement(createTempElement(table).getElementsByTagName('table')[0]);
 }
 
 export const parse = (table = "", {
@@ -82,8 +96,13 @@ export const parse = (table = "", {
     if (!table) {
         return "";
     }
-    let keys = tableKeys(table)
-    const rows = createTempElement(table).getElementsByTagName('table')[0].getElementsByTagName('tr')
+    // 只创建一次临时节点：表头与数据行共用同一份 DOM，避免重复解析整张表
+    const tableElement = createTempElement(table).getElementsByTagName('table')[0]
+    if (!tableElement) {
+        return "";
+    }
+    const keys = tableKeysFromElement(tableElement)
+    const rows = tableElement.getElementsByTagName('tr')
     let result: any[] = [];
     for (let i = 1; i < rows.length; i++) {
         const row = rows[i].querySelectorAll('td');
@@ -112,7 +131,7 @@ const stringify = (json:any, {header = true} = {}) => {
             '<thead>',
             '<tr>',
             ...keys.map((item) => {
-                return `<th>${item}</th>`
+                return `<th>${escapeHtml(item)}</th>`
             }),
             '</tr>',
             '</thead>'
@@ -121,7 +140,7 @@ const stringify = (json:any, {header = true} = {}) => {
     html.push("<tbody>")
     for (let row of json) {
         html.push("<tr>", ...keys.map((item) => {
-            return `<td>${item in row ? row[item] : ""}</td>`
+            return `<td>${escapeHtml(item in row ? row[item] : "")}</td>`
         }), '</tr>');
     }
     html.push("</tbody></table>")

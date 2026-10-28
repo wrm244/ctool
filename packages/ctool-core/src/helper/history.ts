@@ -85,7 +85,20 @@ class History<T = any> {
         if (this.length() > HISTORY_MAX_LENGTH) {
             this.lists.pop()
         }
-        storage.set<HistoryItemStructure<T>[]>(this.cacheName(), this.lists, TOOL_DATA_EXPIRY)
+        // localStorage 配额写满时 storage.set 会直接抛异常（调用方会默默丢掉），
+        // 这里遇错就丢掉最旧的记录再重试，至少把最新的几条保存下来
+        for (; ;) {
+            try {
+                storage.set<HistoryItemStructure<T>[]>(this.cacheName(), this.lists, TOOL_DATA_EXPIRY)
+                break
+            } catch (e) {
+                if (this.lists.length <= 1) {
+                    console.warn('历史数据写入失败，已放弃保存:', e)
+                    break
+                }
+                this.lists.pop()
+            }
+        }
         History.change()
     }
 
