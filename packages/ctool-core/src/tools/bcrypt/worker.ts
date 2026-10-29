@@ -1,3 +1,5 @@
+// 必须在 bcryptjs 之前导入，保证 global 兜底先于依赖求值生效
+import "./polyfill";
 import bcrypt from "bcryptjs";
 
 // Helper function to send messages back to the main thread
