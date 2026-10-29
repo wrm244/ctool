@@ -1,6 +1,6 @@
 [package]
 name = "tauri-app"
-version = "2.7.1"
+version = "2.7.2"
 description = "ctool"
 authors = ["wrm244"]
 license = ""
